@@ -10,3 +10,5 @@
 6. drag the rectangle
 7. fix #6 BUG, it will jump to the first postion for beginning when drag the rectangle
 8. the mouse will be default to pointer when dragging the rectangle
+9. set mouse when cursor is in the renderBorderCirclor
+10. reszie the rectangle

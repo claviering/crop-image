@@ -1,4 +1,7 @@
 import "./style.css";
+import { SizeControlPoint, radius } from "./SizeControlPoint";
+import { CursorType } from "./CursorType";
+const { neswResize, nwseResize } = CursorType;
 
 interface IOption {
   /** 存放 canvas div id */
@@ -57,32 +60,26 @@ class CropImage {
     this.ctx.lineWidth = 2;
     this.ctx.setLineDash([3]);
     let x = this.cropRectangle.left;
-    console.log("x", x);
     let y = this.cropRectangle.top;
     let width = this.cropRectangle.width;
     let height = this.cropRectangle.height;
     this.ctx.clearRect(x, y, width, height);
     this.ctx.strokeRect(x, y, width, height);
-    this.renderBorderCirclor(x, y);
-    this.renderBorderCirclor(x + width, y);
-    this.renderBorderCirclor(x + width, y + height);
-    this.renderBorderCirclor(x, y + height);
+    const sizeControlPoints = [
+      new SizeControlPoint(x, y, nwseResize, this.ctx),
+      new SizeControlPoint(x + width, y, neswResize, this.ctx),
+      new SizeControlPoint(x + width, y + height, nwseResize, this.ctx),
+      new SizeControlPoint(x, y + height, neswResize, this.ctx),
+    ];
+    sizeControlPoints.forEach((point) => point.render());
   }
   drawCover() {
     this.ctx.fillStyle = "rgba(0,0,0,0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
-  renderBorderCirclor(x: number, y: number) {
-    this.ctx.beginPath();
-    this.ctx.setLineDash([]);
-    this.ctx.arc(x, y, 5, 0, Math.PI * 2);
-    this.ctx.fillStyle = this.backgroundColor;
-    this.ctx.fill();
-    this.ctx.strokeStyle = this.strokeStyle;
-    this.ctx.stroke();
-    this.ctx.closePath();
-  }
+
   startMouse(e: MouseEvent) {
+    if (this.canvas.style.cursor !== "move") return;
     this.moving = true;
     this.startMovePos = { x: e.clientX, y: e.clientY };
   }
@@ -122,6 +119,25 @@ class CropImage {
       this.canvas.style.cursor = "move";
     } else {
       this.canvas.style.cursor = "default";
+    }
+    if (Math.abs(x - crop_left) * Math.abs(y - crop_top) < radius) {
+      this.canvas.style.cursor = nwseResize;
+    } else if (
+      Math.abs(x - (crop_left + crop_width)) *
+        Math.abs(y - (crop_top + crop_height)) <
+      radius
+    ) {
+      this.canvas.style.cursor = nwseResize;
+    } else if (
+      Math.abs(x - (crop_left + crop_width)) * Math.abs(y - crop_top) <
+      radius
+    ) {
+      this.canvas.style.cursor = neswResize;
+    } else if (
+      Math.abs(x - crop_left) * Math.abs(y - (crop_top + crop_height)) <
+      radius
+    ) {
+      this.canvas.style.cursor = neswResize;
     }
   }
   /**
