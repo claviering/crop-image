@@ -144,15 +144,17 @@ class CropImage {
       width: crop_width,
       height: crop_height,
     } = this.cropRectangle;
-    if (
-      x > crop_left &&
-      x < crop_left + crop_width &&
-      y > crop_top &&
-      y < crop_top + crop_height
-    ) {
-      this.canvas.style.cursor = "move";
-    } else {
-      this.canvas.style.cursor = "default";
+    if (!this.resizing) {
+      if (
+        x > crop_left &&
+        x < crop_left + crop_width &&
+        y > crop_top &&
+        y < crop_top + crop_height
+      ) {
+        this.canvas.style.cursor = "move";
+      } else {
+        this.canvas.style.cursor = "default";
+      }
     }
     if (Math.abs(x - crop_left) * Math.abs(y - crop_top) < radius) {
       this.canvas.style.cursor = nwseResize;
