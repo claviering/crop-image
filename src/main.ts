@@ -21,12 +21,9 @@ class CropRectangle {
   top: number = 0;
   width: number = 0;
   height: number = 0;
-  constructor(left: number, top: number, width: number, height: number) {
-    this.left = left;
-    this.top = top;
-    this.width = width;
-    this.height = height;
-  }
+  startPosLeft: number = 0;
+  startPosTop: number = 0;
+  constructor() {}
 }
 
 class CropImage {
@@ -37,7 +34,7 @@ class CropImage {
   strokeStyle: string = "#999";
   ratio: number = 1;
   backgroundColor = "#FFF";
-  cropRectangle: CropRectangle = new CropRectangle(0, 0, 0, 0);
+  cropRectangle: CropRectangle = new CropRectangle();
   moving: boolean = false;
   startMovePos: IPosition = { x: 0, y: 0 };
   constructor(id: string, src: string, option?: IOption) {
@@ -55,33 +52,21 @@ class CropImage {
     this.canvas.addEventListener("mousemove", this.moveMouse.bind(this));
     this.canvas.addEventListener("mouseup", this.endMouse.bind(this));
   }
-  renderBorder(move_x: number = 0, move_y: number = 0) {
+  renderBorder() {
     this.ctx.strokeStyle = this.strokeStyle;
     this.ctx.lineWidth = 2;
     this.ctx.setLineDash([3]);
-    let rect_x = this.cropRectangle.left;
-    let rect_y = this.cropRectangle.top;
-    let cropRectWidth = this.cropRectangle.width;
-    let cropRectHeight = this.cropRectangle.height;
-    this.ctx.clearRect(
-      rect_x + move_x,
-      rect_y + move_y,
-      cropRectWidth,
-      cropRectHeight
-    );
-    this.ctx.strokeRect(
-      rect_x + move_x,
-      rect_y + move_y,
-      cropRectWidth,
-      cropRectHeight
-    );
-    this.renderBorderCirclor(rect_x + move_x, rect_y + move_y);
-    this.renderBorderCirclor(rect_x + cropRectWidth + move_x, rect_y + move_y);
-    this.renderBorderCirclor(
-      rect_x + cropRectWidth + move_x,
-      rect_y + cropRectHeight + move_y
-    );
-    this.renderBorderCirclor(rect_x + move_x, rect_y + cropRectHeight + move_y);
+    let x = this.cropRectangle.left;
+    console.log("x", x);
+    let y = this.cropRectangle.top;
+    let width = this.cropRectangle.width;
+    let height = this.cropRectangle.height;
+    this.ctx.clearRect(x, y, width, height);
+    this.ctx.strokeRect(x, y, width, height);
+    this.renderBorderCirclor(x, y);
+    this.renderBorderCirclor(x + width, y);
+    this.renderBorderCirclor(x + width, y + height);
+    this.renderBorderCirclor(x, y + height);
   }
   drawCover() {
     this.ctx.fillStyle = "rgba(0,0,0,0.5)";
@@ -106,16 +91,15 @@ class CropImage {
     const { clientX, clientY } = e;
     const move_x = clientX - this.startMovePos.x;
     const move_y = clientY - this.startMovePos.y;
+    this.cropRectangle.left = this.cropRectangle.startPosLeft + move_x;
+    this.cropRectangle.top = this.cropRectangle.startPosTop + move_y;
     requestAnimationFrame(() => {
       this.render(this.src, move_x, move_y);
     });
   }
-  endMouse(e: MouseEvent) {
-    let { clientX, clientY } = e;
-    let move_x = clientX - this.startMovePos.x;
-    let move_y = clientY - this.startMovePos.y;
-    this.cropRectangle.left += move_x;
-    this.cropRectangle.top += move_y;
+  endMouse() {
+    this.cropRectangle.startPosLeft = this.cropRectangle.left;
+    this.cropRectangle.startPosTop = this.cropRectangle.top;
     this.moving = false;
   }
   handleMouseMove(e: MouseEvent) {
@@ -161,7 +145,7 @@ class CropImage {
       this.cropRectangle.height = crop_height;
       this.ctx.clearRect(x, y, width, height);
       this.drawCover();
-      this.renderBorder(x, y);
+      this.renderBorder();
       this.ctx.globalCompositeOperation = "destination-over";
       this.ctx.drawImage(img, 0, 0);
       this.app.innerHTML = "";
