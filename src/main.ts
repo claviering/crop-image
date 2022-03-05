@@ -3,6 +3,13 @@ import { SizeControlPoint, radius } from "./SizeControlPoint";
 import { CursorType } from "./CursorType";
 const { neswResize, nwseResize } = CursorType;
 
+type IResizeDir =
+  | ""
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right";
+
 interface IOption {
   /** 存放 canvas div id */
   id: string;
@@ -26,6 +33,8 @@ class CropRectangle {
   height: number = 0;
   startPosLeft: number = 0;
   startPosTop: number = 0;
+  startResizeWidth: number = 0;
+  startResizeHeight: number = 0;
   constructor() {}
 }
 
@@ -39,6 +48,8 @@ class CropImage {
   backgroundColor = "#FFF";
   cropRectangle: CropRectangle = new CropRectangle();
   moving: boolean = false;
+  resizing: boolean = false;
+  resizeDir: IResizeDir = "";
   startMovePos: IPosition = { x: 0, y: 0 };
   constructor(id: string, src: string, option?: IOption) {
     this.src = src;
@@ -79,25 +90,48 @@ class CropImage {
   }
 
   startMouse(e: MouseEvent) {
-    if (this.canvas.style.cursor !== "move") return;
-    this.moving = true;
     this.startMovePos = { x: e.clientX, y: e.clientY };
+    let cursor = this.canvas.style.cursor;
+    if (cursor === "move") {
+      this.moving = true;
+    } else if (cursor === neswResize || cursor === nwseResize) {
+      this.resizing = true;
+    }
   }
   moveMouse(e: MouseEvent) {
-    if (!this.moving) return;
     const { clientX, clientY } = e;
     const move_x = clientX - this.startMovePos.x;
     const move_y = clientY - this.startMovePos.y;
-    this.cropRectangle.left = this.cropRectangle.startPosLeft + move_x;
-    this.cropRectangle.top = this.cropRectangle.startPosTop + move_y;
-    requestAnimationFrame(() => {
-      this.render(this.src, move_x, move_y);
-    });
+    if (this.moving) {
+      this.cropRectangle.left = this.cropRectangle.startPosLeft + move_x;
+      this.cropRectangle.top = this.cropRectangle.startPosTop + move_y;
+      requestAnimationFrame(() => {
+        this.render(this.src, move_x, move_y);
+      });
+    } else if (this.resizing) {
+      this.resize(move_x);
+    }
   }
   endMouse() {
+    if (this.resizing && this.resizeDir === "top-left") {
+      let move = this.cropRectangle.left - this.cropRectangle.startPosLeft;
+      this.cropRectangle.startResizeWidth -= move;
+      this.cropRectangle.startResizeHeight -= move;
+    } else if (this.resizing && this.resizeDir === "top-right") {
+      let move = this.cropRectangle.top - this.cropRectangle.startPosTop;
+      this.cropRectangle.startResizeWidth -= move;
+      this.cropRectangle.startResizeHeight -= move;
+    } else if (this.resizing && this.resizeDir === "bottom-right") {
+      this.cropRectangle.startResizeWidth = this.cropRectangle.width;
+      this.cropRectangle.startResizeHeight = this.cropRectangle.height;
+    } else if (this.resizing && this.resizeDir === "bottom-left") {
+      this.cropRectangle.startResizeWidth = this.cropRectangle.width;
+      this.cropRectangle.startResizeHeight = this.cropRectangle.height;
+    }
     this.cropRectangle.startPosLeft = this.cropRectangle.left;
     this.cropRectangle.startPosTop = this.cropRectangle.top;
     this.moving = false;
+    this.resizing = false;
   }
   handleMouseMove(e: MouseEvent) {
     const { clientX, clientY } = e;
@@ -122,23 +156,58 @@ class CropImage {
     }
     if (Math.abs(x - crop_left) * Math.abs(y - crop_top) < radius) {
       this.canvas.style.cursor = nwseResize;
+      this.resizeDir = "top-left";
     } else if (
       Math.abs(x - (crop_left + crop_width)) *
         Math.abs(y - (crop_top + crop_height)) <
       radius
     ) {
       this.canvas.style.cursor = nwseResize;
+      this.resizeDir = "bottom-right";
     } else if (
       Math.abs(x - (crop_left + crop_width)) * Math.abs(y - crop_top) <
       radius
     ) {
       this.canvas.style.cursor = neswResize;
+      this.resizeDir = "top-right";
     } else if (
       Math.abs(x - crop_left) * Math.abs(y - (crop_top + crop_height)) <
       radius
     ) {
       this.canvas.style.cursor = neswResize;
+      this.resizeDir = "bottom-left";
     }
+  }
+  resize(move_x: number) {
+    let resize_move = move_x;
+    if (this.resizeDir === "top-left") {
+      this.cropRectangle.left = this.cropRectangle.startPosLeft + resize_move;
+      this.cropRectangle.top = this.cropRectangle.startPosTop + resize_move;
+      this.cropRectangle.width =
+        this.cropRectangle.startResizeWidth - resize_move;
+      this.cropRectangle.height =
+        this.cropRectangle.startResizeHeight - resize_move;
+    } else if (this.resizeDir === "top-right") {
+      this.cropRectangle.top = this.cropRectangle.startPosTop - resize_move;
+      this.cropRectangle.width =
+        this.cropRectangle.startResizeWidth + resize_move;
+      this.cropRectangle.height =
+        this.cropRectangle.startResizeHeight + resize_move;
+    } else if (this.resizeDir === "bottom-right") {
+      this.cropRectangle.width =
+        this.cropRectangle.startResizeWidth + resize_move;
+      this.cropRectangle.height =
+        this.cropRectangle.startResizeHeight + resize_move;
+    } else if (this.resizeDir === "bottom-left") {
+      this.cropRectangle.left = this.cropRectangle.startPosLeft + resize_move;
+      this.cropRectangle.width =
+        this.cropRectangle.startResizeWidth - resize_move;
+      this.cropRectangle.height =
+        this.cropRectangle.startResizeHeight - resize_move;
+    }
+    requestAnimationFrame(() => {
+      this.render(this.src, resize_move, resize_move);
+    });
   }
   /**
    *
@@ -157,8 +226,12 @@ class CropImage {
       canvas.height = height;
       let crop_width = width <= height * ratio ? width : height * ratio; // 图片裁剪宽度
       let crop_height = width <= height * ratio ? width / ratio : height; // 图片裁剪高度
-      this.cropRectangle.width = crop_width;
-      this.cropRectangle.height = crop_height;
+      if (!this.cropRectangle.startResizeWidth) {
+        this.cropRectangle.width = crop_width;
+        this.cropRectangle.height = crop_height;
+        this.cropRectangle.startResizeWidth = crop_width;
+        this.cropRectangle.startResizeHeight = crop_height;
+      }
       this.ctx.clearRect(x, y, width, height);
       this.drawCover();
       this.renderBorder();
