@@ -1,0 +1,10 @@
+# crop image using canvas
+
+## Idea
+
+1. load image and render it to canvas and set it to the buttom of the layout
+2. draw a Cover
+3. draw crop rectangle with the ratio and clean the rectangle style
+4. draw BorderCircles
+5. set the cursor to pointer when mouse move over the rectangle
+6. drag the rectangle
