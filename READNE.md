@@ -8,3 +8,5 @@
 4. draw BorderCircles
 5. set the cursor to pointer when mouse move over the rectangle
 6. drag the rectangle
+7. fix #6 BUG, it will jump to the first postion for beginning when drag the rectangle
+8. the mouse will be default to pointer when dragging the rectangle

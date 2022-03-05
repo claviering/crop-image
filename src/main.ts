@@ -59,23 +59,29 @@ class CropImage {
     this.ctx.strokeStyle = this.strokeStyle;
     this.ctx.lineWidth = 2;
     this.ctx.setLineDash([3]);
-    let ratio = this.ratio;
-    let width = this.canvas.width;
-    let height = this.canvas.height;
-    let end_x = width <= height * ratio ? width : height * ratio; // 图片裁剪宽度
-    let end_y = width <= height * ratio ? width / ratio : height; // 图片裁剪高度
-    this.ctx.clearRect(0 + move_x, 0 + move_y, end_x + move_x, end_y + move_y);
-    this.ctx.strokeRect(0 + move_x, 0 + move_y, end_x + move_x, end_y + move_y);
-    this.renderBorderCirclor(0 + move_x, 0 + move_y);
-    this.renderBorderCirclor(end_x + move_x, 0 + move_y);
-    this.renderBorderCirclor(end_x + move_x, end_y + move_y);
-    this.renderBorderCirclor(0 + move_x, end_y + move_y);
-    this.cropRectangle = new CropRectangle(
-      0 + move_x,
-      0 + move_y,
-      end_x + move_x,
-      end_y + move_y
+    let rect_x = this.cropRectangle.left;
+    let rect_y = this.cropRectangle.top;
+    let cropRectWidth = this.cropRectangle.width;
+    let cropRectHeight = this.cropRectangle.height;
+    this.ctx.clearRect(
+      rect_x + move_x,
+      rect_y + move_y,
+      cropRectWidth,
+      cropRectHeight
     );
+    this.ctx.strokeRect(
+      rect_x + move_x,
+      rect_y + move_y,
+      cropRectWidth,
+      cropRectHeight
+    );
+    this.renderBorderCirclor(rect_x + move_x, rect_y + move_y);
+    this.renderBorderCirclor(rect_x + cropRectWidth + move_x, rect_y + move_y);
+    this.renderBorderCirclor(
+      rect_x + cropRectWidth + move_x,
+      rect_y + cropRectHeight + move_y
+    );
+    this.renderBorderCirclor(rect_x + move_x, rect_y + cropRectHeight + move_y);
   }
   drawCover() {
     this.ctx.fillStyle = "rgba(0,0,0,0.5)";
@@ -104,7 +110,12 @@ class CropImage {
       this.render(this.src, move_x, move_y);
     });
   }
-  endMouse() {
+  endMouse(e: MouseEvent) {
+    let { clientX, clientY } = e;
+    let move_x = clientX - this.startMovePos.x;
+    let move_y = clientY - this.startMovePos.y;
+    this.cropRectangle.left += move_x;
+    this.cropRectangle.top += move_y;
     this.moving = false;
   }
   handleMouseMove(e: MouseEvent) {
@@ -132,16 +143,23 @@ class CropImage {
   /**
    *
    * @param src 图片地址
-   * @param x 开始图片裁剪的 x 坐标
-   * @param y 开始图片裁剪的 y 坐标
+   * @param x 裁剪选区开始的 x 坐标
+   * @param y 裁剪选区开始的 y 坐标
    */
   render(src: string, x: number = 0, y: number = 0) {
     const img = new Image();
     img.onload = () => {
       const canvas = this.canvas;
-      canvas.width = img.width;
-      canvas.height = img.height;
-      this.ctx.clearRect(x, y, img.width, img.height);
+      let ratio = this.ratio;
+      let width = img.width;
+      let height = img.height;
+      canvas.width = width;
+      canvas.height = height;
+      let crop_width = width <= height * ratio ? width : height * ratio; // 图片裁剪宽度
+      let crop_height = width <= height * ratio ? width / ratio : height; // 图片裁剪高度
+      this.cropRectangle.width = crop_width;
+      this.cropRectangle.height = crop_height;
+      this.ctx.clearRect(x, y, width, height);
       this.drawCover();
       this.renderBorder(x, y);
       this.ctx.globalCompositeOperation = "destination-over";
