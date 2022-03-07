@@ -1,5 +1,3 @@
-import { CursorType } from "./CursorType";
-
 interface IBoundingBox {
   left: number;
   top: number;
@@ -18,11 +16,9 @@ export class SizeControlPoint implements IBoundingBox, IRenderable {
   height = radius * 2;
   bordredColor: string = "#999";
   backgroundColor: string = "#fff";
-  public static topLayerCursorType = CursorType.defaultCursor;
   constructor(
     private centerX: number,
     private centerY: number,
-    public cursorType: CursorType,
     private ctx: CanvasRenderingContext2D
   ) {
     this.left = centerX - radius;
