@@ -11,10 +11,6 @@ type IResizeDir =
   | "bottom-right";
 
 interface IOption {
-  /** 存放 canvas div id */
-  id: string;
-  /** input id */
-  inputId: string;
   /** 边框颜色 */
   strokeStyle?: string;
   /** 裁剪比例 */
@@ -31,19 +27,11 @@ class CropRectangle {
   top: number = 0;
   width: number = 0;
   height: number = 0;
-  startPosLeft: number = 0;
-  startPosTop: number = 0;
-  startResizeWidth: number = 0;
-  startResizeHeight: number = 0;
   constructor(left: number, top: number, width: number, height: number) {
     this.left = left;
     this.top = top;
     this.width = width;
     this.height = height;
-    this.startPosLeft = left;
-    this.startPosTop = top;
-    this.startResizeWidth = width;
-    this.startResizeHeight = height;
   }
 }
 
@@ -111,33 +99,16 @@ class CropImage {
     const move_x = clientX - this.startMovePos.x;
     const move_y = clientY - this.startMovePos.y;
     if (this.moving) {
-      this.cropRectangle.left = this.cropRectangle.startPosLeft + move_x;
-      this.cropRectangle.top = this.cropRectangle.startPosTop + move_y;
-      requestAnimationFrame(() => {
-        this.render();
-      });
+      this.cropRectangle.left += move_x;
+      this.cropRectangle.top += move_y;
+      this.render();
     } else if (this.resizing) {
       this.resize(move_x);
     }
+    this.startMovePos.x += move_x;
+    this.startMovePos.y += move_y;
   }
   endMouse() {
-    if (this.resizing && this.resizeDir === "top-left") {
-      let move = this.cropRectangle.left - this.cropRectangle.startPosLeft;
-      this.cropRectangle.startResizeWidth -= move;
-      this.cropRectangle.startResizeHeight -= move;
-    } else if (this.resizing && this.resizeDir === "top-right") {
-      let move = this.cropRectangle.top - this.cropRectangle.startPosTop;
-      this.cropRectangle.startResizeWidth -= move;
-      this.cropRectangle.startResizeHeight -= move;
-    } else if (this.resizing && this.resizeDir === "bottom-right") {
-      this.cropRectangle.startResizeWidth = this.cropRectangle.width;
-      this.cropRectangle.startResizeHeight = this.cropRectangle.height;
-    } else if (this.resizing && this.resizeDir === "bottom-left") {
-      this.cropRectangle.startResizeWidth = this.cropRectangle.width;
-      this.cropRectangle.startResizeHeight = this.cropRectangle.height;
-    }
-    this.cropRectangle.startPosLeft = this.cropRectangle.left;
-    this.cropRectangle.startPosTop = this.cropRectangle.top;
     this.moving = false;
     this.resizing = false;
   }
@@ -189,37 +160,27 @@ class CropImage {
     }
   }
   resize(move_x: number) {
-    let resize_move = move_x;
     if (this.resizeDir === "top-left") {
-      this.cropRectangle.left = this.cropRectangle.startPosLeft + resize_move;
-      this.cropRectangle.top = this.cropRectangle.startPosTop + resize_move;
-      this.cropRectangle.width =
-        this.cropRectangle.startResizeWidth - resize_move;
-      this.cropRectangle.height =
-        this.cropRectangle.startResizeHeight - resize_move;
+      this.cropRectangle.left += move_x;
+      this.cropRectangle.top += move_x;
+      this.cropRectangle.width -= move_x;
+      this.cropRectangle.height -= move_x;
     } else if (this.resizeDir === "top-right") {
-      this.cropRectangle.top = this.cropRectangle.startPosTop - resize_move;
-      this.cropRectangle.width =
-        this.cropRectangle.startResizeWidth + resize_move;
-      this.cropRectangle.height =
-        this.cropRectangle.startResizeHeight + resize_move;
+      this.cropRectangle.top -= move_x;
+      this.cropRectangle.width += move_x;
+      this.cropRectangle.height += move_x;
     } else if (this.resizeDir === "bottom-right") {
-      this.cropRectangle.width =
-        this.cropRectangle.startResizeWidth + resize_move;
-      this.cropRectangle.height =
-        this.cropRectangle.startResizeHeight + resize_move;
+      this.cropRectangle.width += move_x;
+      this.cropRectangle.height += move_x;
     } else if (this.resizeDir === "bottom-left") {
-      this.cropRectangle.left = this.cropRectangle.startPosLeft + resize_move;
-      this.cropRectangle.width =
-        this.cropRectangle.startResizeWidth - resize_move;
-      this.cropRectangle.height =
-        this.cropRectangle.startResizeHeight - resize_move;
+      this.cropRectangle.left += move_x;
+      this.cropRectangle.width -= move_x;
+      this.cropRectangle.height -= move_x;
     }
-    requestAnimationFrame(() => {
-      this.render();
-    });
+    this.render();
   }
-  render() {
+  render = () => {
+    requestAnimationFrame(this.render);
     this.ctx.globalCompositeOperation = "source-over";
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.drawCover(this.canvas.width, this.canvas.height);
@@ -231,7 +192,7 @@ class CropImage {
     );
     this.ctx.globalCompositeOperation = "destination-over";
     this.ctx.drawImage(this.img, 0, 0);
-  }
+  };
   /**
    *  init canvas width and height, init image, init crop rectangle
    * @param src 图片地址
@@ -249,7 +210,7 @@ class CropImage {
       let crop_height = width <= height * ratio ? width / ratio : height; // 图片裁剪高度
       this.cropRectangle = new CropRectangle(0, 0, crop_width, crop_height);
       this.app.appendChild(this.canvas);
-      this.render();
+      requestAnimationFrame(this.render);
     };
     img.src = src;
   }
