@@ -3,6 +3,13 @@ import { SizeControlPoint, radius } from "./SizeControlPoint";
 import { CursorType } from "./CursorType";
 const { neswResize, nwseResize } = CursorType;
 
+enum ResizeDir {
+  TOP_LEFR = "top-left",
+  TOP_RIGHT = "top-right",
+  BOTTOM_LEFT = "bottom-left",
+  BOTTOM_RIGHT = "bottom-right",
+}
+
 type IResizeDir =
   | ""
   | "top-left"
@@ -27,6 +34,7 @@ class CropRectangle {
   top: number = 0;
   width: number = 0;
   height: number = 0;
+  min: number = 20; // 裁剪的最小尺寸
   constructor(left: number, top: number, width: number, height: number) {
     this.left = left;
     this.top = top;
@@ -84,7 +92,21 @@ class CropImage {
     this.ctx.fillStyle = "rgba(0,0,0,0.5)";
     this.ctx.fillRect(0, 0, width, height);
   }
-
+  moveInside() {
+    let { left, top, width, height } = this.cropRectangle;
+    if (left < 0) {
+      this.cropRectangle.left = 0;
+    }
+    if (top < 0) {
+      this.cropRectangle.top = 0;
+    }
+    if (left + width > this.canvas.width) {
+      this.cropRectangle.left = this.canvas.width - width;
+    }
+    if (top + height > this.canvas.height) {
+      this.cropRectangle.top = this.canvas.height - height;
+    }
+  }
   startMouse(e: MouseEvent) {
     this.startMovePos = { x: e.clientX, y: e.clientY };
     let cursor = this.canvas.style.cursor;
@@ -101,6 +123,7 @@ class CropImage {
     if (this.moving) {
       this.cropRectangle.left += move_x;
       this.cropRectangle.top += move_y;
+      this.moveInside();
       this.render();
     } else if (this.resizing) {
       this.resize(move_x);
@@ -137,42 +160,60 @@ class CropImage {
     }
     if (Math.abs(x - crop_left) * Math.abs(y - crop_top) < radius) {
       this.canvas.style.cursor = nwseResize;
-      this.resizeDir = "top-left";
+      this.resizeDir = ResizeDir.TOP_LEFR;
     } else if (
       Math.abs(x - (crop_left + crop_width)) *
         Math.abs(y - (crop_top + crop_height)) <
       radius
     ) {
       this.canvas.style.cursor = nwseResize;
-      this.resizeDir = "bottom-right";
+      this.resizeDir = ResizeDir.BOTTOM_RIGHT;
     } else if (
       Math.abs(x - (crop_left + crop_width)) * Math.abs(y - crop_top) <
       radius
     ) {
       this.canvas.style.cursor = neswResize;
-      this.resizeDir = "top-right";
+      this.resizeDir = ResizeDir.TOP_RIGHT;
     } else if (
       Math.abs(x - crop_left) * Math.abs(y - (crop_top + crop_height)) <
       radius
     ) {
       this.canvas.style.cursor = neswResize;
-      this.resizeDir = "bottom-left";
+      this.resizeDir = ResizeDir.BOTTOM_LEFT;
     }
   }
+  canResize(dir: IResizeDir, move: number): boolean {
+    const { width, height, min } = this.cropRectangle;
+    if (
+      (dir === ResizeDir.TOP_LEFR || dir === ResizeDir.BOTTOM_LEFT) &&
+      width - move > min &&
+      height - move > min
+    ) {
+      return true;
+    } else if (
+      (dir === ResizeDir.TOP_RIGHT || dir === ResizeDir.BOTTOM_RIGHT) &&
+      width + move > min &&
+      height + move > min
+    ) {
+      return true;
+    }
+    return false;
+  }
   resize(move_x: number) {
-    if (this.resizeDir === "top-left") {
+    if (!this.canResize(this.resizeDir, move_x)) return;
+    if (this.resizeDir === ResizeDir.TOP_LEFR) {
       this.cropRectangle.left += move_x;
       this.cropRectangle.top += move_x;
       this.cropRectangle.width -= move_x;
       this.cropRectangle.height -= move_x;
-    } else if (this.resizeDir === "top-right") {
+    } else if (this.resizeDir === ResizeDir.TOP_RIGHT) {
       this.cropRectangle.top -= move_x;
       this.cropRectangle.width += move_x;
       this.cropRectangle.height += move_x;
-    } else if (this.resizeDir === "bottom-right") {
+    } else if (this.resizeDir === ResizeDir.BOTTOM_RIGHT) {
       this.cropRectangle.width += move_x;
       this.cropRectangle.height += move_x;
-    } else if (this.resizeDir === "bottom-left") {
+    } else if (this.resizeDir === ResizeDir.BOTTOM_LEFT) {
       this.cropRectangle.left += move_x;
       this.cropRectangle.width -= move_x;
       this.cropRectangle.height -= move_x;
