@@ -17,6 +17,19 @@ type IResizeDir =
   | "bottom-left"
   | "bottom-right";
 
+interface IData {
+  /** crop left */
+  left: number;
+  /** crop top */
+  top: number;
+  cropWidth: number;
+  cropHeight: number;
+  imageWidth: number;
+  imageHeight: number;
+  imageVirtalWidth: number;
+  imageVirtalHeight: number;
+}
+
 interface IOption {
   /** 边框颜色 */
   strokeStyle?: string;
@@ -27,6 +40,7 @@ interface IOption {
   /** canvas height if not will init to iamge height */
   height?: number;
   padding?: number;
+  onChange?: (data: IData) => void;
 }
 
 interface IPosition {
@@ -89,6 +103,7 @@ class CropImage {
   height?: number;
   padding: number = 0;
   imageSize = new ImageSize();
+  onChange: (data: IData) => void = () => {};
   constructor(id: string, src: string, option?: IOption) {
     this.app = document.querySelector<HTMLDivElement>(id)!;
     this.canvas = document.createElement("canvas");
@@ -161,11 +176,27 @@ class CropImage {
       this.cropRectangle.top += move_y;
       this.moveInside();
       this.render();
+      this.handleOnChange();
     } else if (this.resizing) {
       this.resize(move_x);
+      this.handleOnChange();
     }
     this.startMovePos.x += move_x;
     this.startMovePos.y += move_y;
+  }
+  handleOnChange() {
+    let leftPadding = this.canvas.width / 2 - this.imageSize.virtualWidth / 2;
+    let topPadding = this.canvas.height / 2 - this.imageSize.virtualHeight / 2;
+    this.onChange({
+      left: this.cropRectangle.left - leftPadding,
+      top: this.cropRectangle.top - topPadding,
+      cropWidth: this.cropRectangle.width,
+      cropHeight: this.cropRectangle.height,
+      imageWidth: this.imageSize.width,
+      imageHeight: this.imageSize.height,
+      imageVirtalWidth: this.imageSize.virtualWidth,
+      imageVirtalHeight: this.imageSize.virtualHeight,
+    });
   }
   endMouse() {
     this.moving = false;
@@ -218,7 +249,29 @@ class CropImage {
       this.resizeDir = ResizeDir.BOTTOM_LEFT;
     }
   }
-  canResize(dir: IResizeDir, move: number): boolean {
+  canZoomIn(dir: IResizeDir, move: number): boolean {
+    const { top, width, height } = this.cropRectangle;
+    const { virtualWidth, virtualHeight } = this.imageSize;
+    let leftPadding = this.canvas.width / 2 - virtualWidth / 2;
+    let topPadding = this.canvas.height / 2 - virtualHeight / 2;
+    if (
+      (dir === ResizeDir.TOP_LEFR || dir === ResizeDir.BOTTOM_LEFT) &&
+      top + move > topPadding &&
+      this.cropRectangle.left + move > leftPadding &&
+      top - move + height < virtualHeight + topPadding
+    ) {
+      return true;
+    } else if (
+      (dir === ResizeDir.TOP_RIGHT || dir === ResizeDir.BOTTOM_RIGHT) &&
+      this.cropRectangle.left + move + width < virtualWidth + leftPadding &&
+      top + move + height < virtualHeight + topPadding &&
+      top - move > topPadding
+    ) {
+      return true;
+    }
+    return false;
+  }
+  canZoomOut(dir: IResizeDir, move: number): boolean {
     const { width, height, min } = this.cropRectangle;
     if (
       (dir === ResizeDir.TOP_LEFR || dir === ResizeDir.BOTTOM_LEFT) &&
@@ -236,7 +289,11 @@ class CropImage {
     return false;
   }
   resize(move_x: number) {
-    if (!this.canResize(this.resizeDir, move_x)) return;
+    if (
+      !this.canZoomOut(this.resizeDir, move_x) ||
+      !this.canZoomIn(this.resizeDir, move_x)
+    )
+      return;
     if (this.resizeDir === ResizeDir.TOP_LEFR) {
       this.cropRectangle.left += move_x;
       this.cropRectangle.top += move_x;
@@ -331,11 +388,17 @@ inputDom.onchange = (e: any) => {
   const file = e.target.files![0];
   const reader = new FileReader();
   reader.onload = () => {
-    new CropImage("#canvas", reader.result as string, {
-      width: 1020,
-      height: 540,
+    let crop = new CropImage("#canvas", reader.result as string, {
+      width: 640,
+      height: 460,
       padding: 40,
     });
+    let image: HTMLDivElement = document.querySelector(".crop-image-1")!;
+    image.style.backgroundImage = `url(${reader.result})`;
+    crop.onChange = (data: IData) => {
+      console.log("data", data);
+      // image.style.backgroundSize = `${data.width}px ${data.height}px`;
+    };
   };
   reader.readAsDataURL(file);
 };

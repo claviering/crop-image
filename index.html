@@ -10,7 +10,31 @@
 
 <body>
   <div id="app">
-    <div id="canvas"></div>
+    <div class="crop-content">
+      <div id="canvas"></div>
+      <div class="crop-oper">
+        <div class="crop-oprt-item">
+          <div>
+            <input type="checkbox" id="scales" name="scales" checked>
+            <label for="scales">图文封面(2.35 : 1)</label>
+          </div>
+          <div class="crop-image-235"></div>
+        </div>
+        <div class="crop-oprt-item">
+          <div>
+            <input type="checkbox" id="scales" name="scales" checked>
+            <label for="scales">图文封面(1 : 1)</label>
+          </div>
+          <div class="crop-image-1">
+
+          </div>
+        </div>
+        <div class="but-list">
+          <div class="but primary">确定</div>
+          <div class="but defalut">取消</div>
+        </div>
+      </div>
+    </div>
     <label class="upload-but" for="image">Upload Image</label>
     <input style="display: none;" type="file" id="image" name="image" accept='image/*'>
   </div>

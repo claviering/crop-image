@@ -42,3 +42,50 @@ canvas {
   background-size: 20px 20px;
   background-position: 0 0, 10px 10px;
 }
+#canvas {
+  width: 720px;
+  height: 540px;
+  background: #ccc;
+}
+.crop-content {
+  display: flex;
+}
+.crop-oper {
+  display: flex;
+  flex-direction: column;
+  margin-left: 30px;
+}
+.crop-image-235 {
+  width: 282px;
+  height: 120px;
+  margin-top: 10px;
+  margin-bottom: 32px;
+}
+.crop-image-1 {
+  width: 100px;
+  height: 100px;
+  margin-top: 10px;
+}
+.but-list {
+  display: flex;
+  margin-top: 198px;
+  justify-content: center;
+}
+.but {
+  border-radius: 4px;
+  border-radius: 4px;
+  font-size: 14px;
+  padding: 6px 24px;
+  cursor: pointer;
+}
+.primary {
+  background: #377fef;
+  color: #ffffff;
+}
+.defalut {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #377fef;
+  color: #377fef;
+  margin-left: 24px;
+}
