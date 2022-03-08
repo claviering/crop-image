@@ -22,6 +22,11 @@ interface IOption {
   strokeStyle?: string;
   /** 裁剪比例 */
   ratio?: number;
+  /** canvas width if not will init to image width */
+  width?: number;
+  /** canvas height if not will init to iamge height */
+  height?: number;
+  padding?: number;
 }
 
 interface IPosition {
@@ -43,6 +48,28 @@ class CropRectangle {
   }
 }
 
+class ImageSize {
+  /** 图片宽度 */
+  width: number;
+  /** 图片高度 */
+  height: number;
+  /** 虚拟图片宽度 */
+  virtualWidth: number;
+  /** 虚拟图片高度 */
+  virtualHeight: number;
+  constructor(
+    width: number = 0,
+    height: number = 0,
+    virtualWidth: number = 0,
+    virtualHeight: number = 0
+  ) {
+    this.width = width;
+    this.height = height;
+    this.virtualWidth = virtualWidth;
+    this.virtualHeight = virtualHeight;
+  }
+}
+
 class CropImage {
   app: HTMLDivElement; // 存放 canvas div
   img: HTMLImageElement;
@@ -56,6 +83,12 @@ class CropImage {
   resizing: boolean = false;
   resizeDir: IResizeDir = "";
   startMovePos: IPosition = { x: 0, y: 0 };
+  /** canvas width if not will init to image width */
+  width?: number;
+  /** canvas height if not will init to iamge height */
+  height?: number;
+  padding: number = 0;
+  imageSize = new ImageSize();
   constructor(id: string, src: string, option?: IOption) {
     this.app = document.querySelector<HTMLDivElement>(id)!;
     this.canvas = document.createElement("canvas");
@@ -94,17 +127,20 @@ class CropImage {
   }
   moveInside() {
     let { left, top, width, height } = this.cropRectangle;
-    if (left < 0) {
-      this.cropRectangle.left = 0;
+    let { virtualWidth, virtualHeight } = this.imageSize;
+    let leftPadding = this.canvas.width / 2 - virtualWidth / 2;
+    let topPadding = this.canvas.height / 2 - virtualHeight / 2;
+    if (left < leftPadding) {
+      this.cropRectangle.left = leftPadding;
     }
-    if (top < 0) {
-      this.cropRectangle.top = 0;
+    if (top < topPadding) {
+      this.cropRectangle.top = topPadding;
     }
-    if (left + width > this.canvas.width) {
-      this.cropRectangle.left = this.canvas.width - width;
+    if (left + width > leftPadding + virtualWidth) {
+      this.cropRectangle.left = leftPadding + virtualWidth - width;
     }
-    if (top + height > this.canvas.height) {
-      this.cropRectangle.top = this.canvas.height - height;
+    if (top + height > topPadding + virtualHeight) {
+      this.cropRectangle.top = topPadding + virtualHeight - height;
     }
   }
   startMouse(e: MouseEvent) {
@@ -232,7 +268,13 @@ class CropImage {
       this.cropRectangle.height
     );
     this.ctx.globalCompositeOperation = "destination-over";
-    this.ctx.drawImage(this.img, 0, 0);
+    this.ctx.drawImage(
+      this.img,
+      this.canvas.width / 2 - this.imageSize.virtualWidth / 2,
+      this.canvas.height / 2 - this.imageSize.virtualHeight / 2,
+      this.imageSize.virtualWidth,
+      this.imageSize.virtualHeight
+    );
   };
   /**
    *  init canvas width and height, init image, init crop rectangle
@@ -242,18 +284,46 @@ class CropImage {
     const img = new Image();
     img.onload = () => {
       this.img = img;
-      let ratio = this.ratio;
       let width = img.width;
       let height = img.height;
-      this.canvas.width = width;
-      this.canvas.height = height;
-      let crop_width = width <= height * ratio ? width : height * ratio; // 图片裁剪宽度
-      let crop_height = width <= height * ratio ? width / ratio : height; // 图片裁剪高度
-      this.cropRectangle = new CropRectangle(0, 0, crop_width, crop_height);
+      this.canvas.width = (this.width || width) + this.padding * 2;
+      this.canvas.height = (this.height || height) + this.padding * 2;
+      this.initImageSize(this.canvas.width, this.canvas.height, width, height);
       this.app.appendChild(this.canvas);
       requestAnimationFrame(this.render);
     };
     img.src = src;
+  }
+  /**
+   * calc the crop rectangle and image position and size
+   * @param cw canvas width
+   * @param ch canvas height
+   * @param iw image width
+   * @param ih image height
+   */
+  initImageSize(cw: number, ch: number, iw: number, ih: number) {
+    let ratio = this.ratio;
+    cw = cw - this.padding * 2;
+    ch = ch - this.padding * 2;
+    if (cw < iw || ch < ih) {
+      if (cw / ch < iw / ih) {
+        this.imageSize = new ImageSize(iw, ih, cw, (cw * ih) / iw);
+      } else {
+        this.imageSize = new ImageSize(iw, ih, (iw * ch) / ih, ch);
+      }
+    } else {
+      this.imageSize = new ImageSize(iw, ih, iw, ih);
+    }
+    let width = this.imageSize.virtualWidth;
+    let height = this.imageSize.virtualHeight;
+    let crop_width = width <= height * ratio ? width : height * ratio; // 图片裁剪宽度
+    let crop_height = width <= height * ratio ? width / ratio : height; // 图片裁剪高度
+    this.cropRectangle = new CropRectangle(
+      (cw - crop_width + this.padding * 2) / 2,
+      (ch - crop_height + this.padding * 2) / 2,
+      crop_width,
+      crop_height
+    );
   }
 }
 let inputDom = document.querySelector<HTMLInputElement>("#image")!;
@@ -261,7 +331,11 @@ inputDom.onchange = (e: any) => {
   const file = e.target.files![0];
   const reader = new FileReader();
   reader.onload = () => {
-    new CropImage("#canvas", reader.result as string);
+    new CropImage("#canvas", reader.result as string, {
+      width: 1020,
+      height: 540,
+      padding: 40,
+    });
   };
   reader.readAsDataURL(file);
 };
