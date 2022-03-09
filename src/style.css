@@ -55,16 +55,21 @@ canvas {
   flex-direction: column;
   margin-left: 30px;
 }
+.crop-oprt-item {
+  cursor: pointer;
+}
 .crop-image-235 {
   width: 282px;
   height: 120px;
   margin-top: 10px;
   margin-bottom: 32px;
+  background-repeat: no-repeat;
 }
 .crop-image-1 {
   width: 100px;
   height: 100px;
   margin-top: 10px;
+  background-repeat: no-repeat;
 }
 .but-list {
   display: flex;
