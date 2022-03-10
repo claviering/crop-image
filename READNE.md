@@ -22,3 +22,12 @@
 ## Try It Online
 
 [Deom](https://stackblitz.com/edit/weiye-crop-image?embed=1&file=index.html)
+
+## Options
+
+| option  | describe                         |
+| ------- | -------------------------------- |
+| width   | canvas width                     |
+| height  | canvas height                    |
+| ratio   | crop rectangle ratio             |
+| padding | padding between canvas and image |
