@@ -12,3 +12,11 @@
 8. the mouse will be default to pointer when dragging the rectangle
 9. set mouse when cursor is in the renderBorderCirclor
 10. reszie the rectangle
+
+## screenshot
+
+![screenshot](./public/screenshot.png)
+
+## Try It Online
+
+[Deom](https://stackblitz.com/edit/weiye-crop-image?embed=1&file=index.html)
