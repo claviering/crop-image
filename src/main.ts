@@ -147,19 +147,18 @@ class CropImage {
   moveInside() {
     let { left, top, width, height } = this.cropRectangle;
     let { virtualWidth, virtualHeight } = this.imageSize;
-    let leftPadding = this.canvas.width / 2 - virtualWidth / 2;
-    let topPadding = this.canvas.height / 2 - virtualHeight / 2;
-    if (left < leftPadding) {
-      this.cropRectangle.left = leftPadding;
+    let [paddingLeft, paddingTop] = this.getPadding();
+    if (left < paddingLeft) {
+      this.cropRectangle.left = paddingLeft;
     }
-    if (top < topPadding) {
-      this.cropRectangle.top = topPadding;
+    if (top < paddingTop) {
+      this.cropRectangle.top = paddingTop;
     }
-    if (left + width > leftPadding + virtualWidth) {
-      this.cropRectangle.left = leftPadding + virtualWidth - width;
+    if (left + width > paddingLeft + virtualWidth) {
+      this.cropRectangle.left = paddingLeft + virtualWidth - width;
     }
-    if (top + height > topPadding + virtualHeight) {
-      this.cropRectangle.top = topPadding + virtualHeight - height;
+    if (top + height > paddingTop + virtualHeight) {
+      this.cropRectangle.top = paddingTop + virtualHeight - height;
     }
   }
   startMouse(e: MouseEvent) {
@@ -245,33 +244,38 @@ class CropImage {
       this.resizeDir = ResizeDir.BOTTOM_LEFT;
     }
   }
+  getPadding() {
+    const { virtualWidth, virtualHeight } = this.imageSize;
+    let paddingLeft = this.canvas.width / 2 - virtualWidth / 2;
+    let paddingTop = this.canvas.height / 2 - virtualHeight / 2;
+    return [paddingLeft, paddingTop];
+  }
   canZoomIn(dir: IResizeDir, move: number): boolean {
     const { left, top, width, height } = this.cropRectangle;
     const { virtualWidth, virtualHeight } = this.imageSize;
-    let leftPadding = this.canvas.width / 2 - virtualWidth / 2;
-    let topPadding = this.canvas.height / 2 - virtualHeight / 2;
+    let [paddingLeft, paddingTop] = this.getPadding();
     if (
       dir === ResizeDir.TOP_LEFR &&
-      top + move > topPadding &&
-      left + move > leftPadding
+      top + move > paddingTop &&
+      left + move > paddingLeft
     ) {
       return true;
     } else if (
       dir === ResizeDir.BOTTOM_LEFT &&
-      left + move > leftPadding &&
-      top - move + height < virtualHeight + topPadding
+      left + move > paddingLeft &&
+      top - move + height < virtualHeight + paddingTop
     ) {
       return true;
     } else if (
       dir === ResizeDir.TOP_RIGHT &&
-      left + move + width < virtualWidth + leftPadding &&
-      top - move > topPadding
+      left + move + width < virtualWidth + paddingLeft &&
+      top - move > paddingTop
     ) {
       return true;
     } else if (
       dir === ResizeDir.BOTTOM_RIGHT &&
-      top + move + height < virtualHeight + topPadding &&
-      left + move + width < virtualWidth + leftPadding
+      top + move + height < virtualHeight + paddingTop &&
+      left + move + width < virtualWidth + paddingLeft
     ) {
       return true;
     }
@@ -352,6 +356,7 @@ class CropImage {
       this.canvas.width = (this.width || width) + this.padding * 2;
       this.canvas.height = (this.height || height) + this.padding * 2;
       this.initImageSize();
+      this.app.innerHTML = "";
       this.app.appendChild(this.canvas);
       requestAnimationFrame(this.render);
       this.handleOnChange();
@@ -373,6 +378,7 @@ class CropImage {
     let ratio = this.ratio;
     cw = cw - this.padding * 2;
     ch = ch - this.padding * 2;
+    // zoom image
     if (cw < iw || ch < ih) {
       if (cw / ch < iw / ih) {
         this.imageSize = new ImageSize(iw, ih, cw, (cw * ih) / iw);
@@ -386,13 +392,40 @@ class CropImage {
     let height = this.imageSize.virtualHeight;
     let crop_width = width <= height * ratio ? width : height * ratio; // 图片裁剪宽度
     let crop_height = width <= height * ratio ? width / ratio : height; // 图片裁剪高度
-    this.cropRectangle = new CropRectangle(
-      (cw - crop_width + this.padding * 2) / 2,
-      (ch - crop_height + this.padding * 2) / 2,
-      crop_width,
-      crop_height
-    );
+    this.initCrop({
+      left: (cw - crop_width + this.padding * 2) / 2,
+      top: (ch - crop_height + this.padding * 2) / 2,
+      width: crop_width,
+      height: crop_height,
+      min: this.cropRectangle.min,
+    });
   }
+  initCrop(option: CropRectangle) {
+    const { left, top, width, height } = option;
+    this.cropRectangle = new CropRectangle(left, top, width, height);
+  }
+}
+
+interface ICropPositionCash {
+  [key: number]: CropRectangle;
+}
+
+function getZoomPrototype(dom: HTMLElement, data: IData) {
+  const {
+    imageVirtalWidth,
+    imageVirtalHeight,
+    cropWidth,
+    cropHeight,
+    left,
+    top,
+  } = data;
+  let width = dom.clientWidth;
+  let height = dom.clientHeight;
+  let zoomWidth = (width * imageVirtalWidth) / cropWidth;
+  let zoomHeight = (height * imageVirtalHeight) / cropHeight;
+  let zoomLeft = (left * zoomWidth) / imageVirtalWidth;
+  let zoomTop = (top * zoomHeight) / imageVirtalHeight;
+  return [zoomWidth, zoomHeight, zoomLeft, zoomTop];
 }
 
 let inputDom = document.querySelector<HTMLInputElement>("#image")!;
@@ -400,6 +433,7 @@ inputDom.onchange = (e: any) => {
   const file = e.target.files![0];
   const reader = new FileReader();
   reader.onload = () => {
+    let cropPositionCash: ICropPositionCash = {};
     let crop = new CropImage("#canvas", reader.result as string, {
       width: 640,
       height: 460,
@@ -409,44 +443,44 @@ inputDom.onchange = (e: any) => {
     let imageDom: HTMLDivElement = document.querySelector(".crop-image-1")!;
     let image235Dom: HTMLDivElement =
       document.querySelector(".crop-image-235")!;
-    imageDom.style.backgroundImage = `url(${reader.result})`;
-    image235Dom.style.backgroundImage = `url(${reader.result})`;
     crop.onChange = (data: IData) => {
       console.log("data", data);
-      const {
-        imageVirtalWidth,
-        imageVirtalHeight,
-        cropWidth,
-        cropHeight,
-        left,
-        top,
-      } = data;
-      console.log(cropWidth / cropHeight);
+      const { cropWidth, cropHeight, left, top } = data;
       if (crop.ratio === 1) {
-        let width = imageDom.clientWidth;
-        let height = imageDom.clientHeight;
-        let zoomWidth = (width * imageVirtalWidth) / cropWidth;
-        let zoomHeight = (height * imageVirtalHeight) / cropHeight;
-        let zoomLeft = (left * zoomWidth) / imageVirtalWidth;
-        let zoomTop = (top * zoomHeight) / imageVirtalHeight;
+        imageDom.style.backgroundImage = `url(${reader.result})`;
+        let [zoomWidth, zoomHeight, zoomLeft, zoomTop] = getZoomPrototype(
+          imageDom,
+          data
+        );
         imageDom.style.backgroundSize = `${zoomWidth}px ${zoomHeight}px`;
         imageDom.style.backgroundPosition = `-${zoomLeft}px -${zoomTop}px`;
       } else if (crop.ratio === 2.35) {
-        let width = image235Dom.clientWidth;
-        let height = image235Dom.clientHeight;
-        let zoomWidth = (width * imageVirtalWidth) / cropWidth;
-        let zoomHeight = (height * imageVirtalHeight) / cropHeight;
-        let zoomLeft = (left * zoomWidth) / imageVirtalWidth;
-        let zoomTop = (top * zoomHeight) / imageVirtalHeight;
+        image235Dom.style.backgroundImage = `url(${reader.result})`;
+        let [zoomWidth, zoomHeight, zoomLeft, zoomTop] = getZoomPrototype(
+          image235Dom,
+          data
+        );
         image235Dom.style.backgroundSize = `${zoomWidth}px ${zoomHeight}px`;
         image235Dom.style.backgroundPosition = `-${zoomLeft}px -${zoomTop}px`;
       }
+      let [paddingLeft, paddingTop] = crop.getPadding();
+      cropPositionCash[crop.ratio] = {
+        left: left + paddingLeft,
+        top: top + paddingTop,
+        width: cropWidth,
+        height: cropHeight,
+        min: crop.cropRectangle.min,
+      };
     };
     let cropOprt = document.querySelector(".crop-oper");
     cropOprt?.addEventListener("click", (e: any) => {
-      console.log(e.target.dataset.ratio);
-      crop.ratio = Number(e.target.dataset.ratio);
-      crop.initImageSize();
+      let ratio = Number(e.target.dataset.ratio);
+      crop.ratio = ratio;
+      if (cropPositionCash[ratio]) {
+        crop.initCrop(cropPositionCash[ratio]);
+      } else {
+        crop.initImageSize();
+      }
       crop.render();
     });
   };
