@@ -26,6 +26,8 @@ interface IData {
   left: number;
   /** crop top */
   top: number;
+  virtalCropWidth: number;
+  virtalCropHeight: number;
   cropWidth: number;
   cropHeight: number;
   imageWidth: number;
@@ -189,15 +191,24 @@ class CropImage {
   handleOnChange() {
     let leftPadding = this.canvas.width / 2 - this.imageSize.virtualWidth / 2;
     let topPadding = this.canvas.height / 2 - this.imageSize.virtualHeight / 2;
+    const { left, top, width: cw, height: ch } = this.cropRectangle;
+    const {
+      width: iw,
+      height: ih,
+      virtualWidth,
+      virtualHeight,
+    } = this.imageSize;
     this.onChange({
-      left: this.cropRectangle.left - leftPadding,
-      top: this.cropRectangle.top - topPadding,
-      cropWidth: this.cropRectangle.width,
-      cropHeight: this.cropRectangle.height,
-      imageWidth: this.imageSize.width,
-      imageHeight: this.imageSize.height,
-      imageVirtalWidth: this.imageSize.virtualWidth,
-      imageVirtalHeight: this.imageSize.virtualHeight,
+      left: left - leftPadding,
+      top: top - topPadding,
+      virtalCropWidth: cw,
+      virtalCropHeight: ch,
+      cropWidth: (iw * cw) / virtualWidth,
+      cropHeight: (ih * ch) / virtualHeight,
+      imageWidth: iw,
+      imageHeight: ih,
+      imageVirtalWidth: virtualWidth,
+      imageVirtalHeight: virtualHeight,
     });
   }
   endMouse() {
@@ -414,15 +425,15 @@ function getZoomPrototype(dom: HTMLElement, data: IData) {
   const {
     imageVirtalWidth,
     imageVirtalHeight,
-    cropWidth,
-    cropHeight,
+    virtalCropWidth,
+    virtalCropHeight,
     left,
     top,
   } = data;
   let width = dom.clientWidth;
   let height = dom.clientHeight;
-  let zoomWidth = (width * imageVirtalWidth) / cropWidth;
-  let zoomHeight = (height * imageVirtalHeight) / cropHeight;
+  let zoomWidth = (width * imageVirtalWidth) / virtalCropWidth;
+  let zoomHeight = (height * imageVirtalHeight) / virtalCropHeight;
   let zoomLeft = (left * zoomWidth) / imageVirtalWidth;
   let zoomTop = (top * zoomHeight) / imageVirtalHeight;
   return [zoomWidth, zoomHeight, zoomLeft, zoomTop];
@@ -445,7 +456,7 @@ inputDom.onchange = (e: any) => {
       document.querySelector(".crop-image-235")!;
     crop.onChange = (data: IData) => {
       console.log("data", data);
-      const { cropWidth, cropHeight, left, top } = data;
+      const { virtalCropWidth, virtalCropHeight, left, top } = data;
       if (crop.ratio === 1) {
         imageDom.style.backgroundImage = `url(${reader.result})`;
         let [zoomWidth, zoomHeight, zoomLeft, zoomTop] = getZoomPrototype(
@@ -467,14 +478,15 @@ inputDom.onchange = (e: any) => {
       cropPositionCash[crop.ratio] = {
         left: left + paddingLeft,
         top: top + paddingTop,
-        width: cropWidth,
-        height: cropHeight,
+        width: virtalCropWidth,
+        height: virtalCropHeight,
         min: crop.cropRectangle.min,
       };
     };
     let cropOprt = document.querySelector(".crop-oper");
     cropOprt?.addEventListener("click", (e: any) => {
       let ratio = Number(e.target.dataset.ratio);
+      if (Number.isNaN(ratio)) return;
       crop.ratio = ratio;
       if (cropPositionCash[ratio]) {
         crop.initCrop(cropPositionCash[ratio]);
