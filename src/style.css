@@ -71,26 +71,3 @@ canvas {
   margin-top: 10px;
   background-repeat: no-repeat;
 }
-.but-list {
-  display: flex;
-  margin-top: 198px;
-  justify-content: center;
-}
-.but {
-  border-radius: 4px;
-  border-radius: 4px;
-  font-size: 14px;
-  padding: 6px 24px;
-  cursor: pointer;
-}
-.primary {
-  background: #377fef;
-  color: #ffffff;
-}
-.defalut {
-  background: #ffffff;
-  color: #000000;
-  border: 1px solid #377fef;
-  color: #377fef;
-  margin-left: 24px;
-}

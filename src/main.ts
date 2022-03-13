@@ -47,6 +47,7 @@ interface IOption {
   height?: number;
   padding?: number;
   onChange?: (data: IData) => void;
+  created?: () => void;
 }
 
 interface IPosition {
@@ -110,6 +111,7 @@ class CropImage {
   padding: number = 0;
   imageSize = new ImageSize();
   onChange: (data: IData) => void = () => {};
+  created: () => void = () => {};
   constructor(id: string, src: string, option?: IOption) {
     this.app = document.querySelector<HTMLDivElement>(id)!;
     this.canvas = document.createElement("canvas");
@@ -370,6 +372,7 @@ class CropImage {
       this.app.innerHTML = "";
       this.app.appendChild(this.canvas);
       requestAnimationFrame(this.render);
+      this.created();
       this.handleOnChange();
     };
     img.src = src;
@@ -454,11 +457,17 @@ inputDom.onchange = (e: any) => {
     let imageDom: HTMLDivElement = document.querySelector(".crop-image-1")!;
     let image235Dom: HTMLDivElement =
       document.querySelector(".crop-image-235")!;
+    imageDom.style.backgroundImage = `url(${reader.result})`;
+    imageDom.style.backgroundSize = `0px 0px`;
+    image235Dom.style.backgroundImage = `url(${reader.result})`;
+    image235Dom.style.backgroundSize = `0px 0px`;
+    crop.created = () => {
+      console.log("created");
+    };
     crop.onChange = (data: IData) => {
       console.log("data", data);
       const { virtalCropWidth, virtalCropHeight, left, top } = data;
       if (crop.ratio === 1) {
-        imageDom.style.backgroundImage = `url(${reader.result})`;
         let [zoomWidth, zoomHeight, zoomLeft, zoomTop] = getZoomPrototype(
           imageDom,
           data
@@ -466,7 +475,6 @@ inputDom.onchange = (e: any) => {
         imageDom.style.backgroundSize = `${zoomWidth}px ${zoomHeight}px`;
         imageDom.style.backgroundPosition = `-${zoomLeft}px -${zoomTop}px`;
       } else if (crop.ratio === 2.35) {
-        image235Dom.style.backgroundImage = `url(${reader.result})`;
         let [zoomWidth, zoomHeight, zoomLeft, zoomTop] = getZoomPrototype(
           image235Dom,
           data
