@@ -183,10 +183,11 @@ class CropImage {
       this.cropRectangle.top += move_y;
       this.moveInside();
       this.render();
+      this.handleOnChange();
     } else if (this.resizing) {
       this.resize(move_x);
+      this.handleOnChange();
     }
-    this.handleOnChange();
     this.startMovePos.x += move_x;
     this.startMovePos.y += move_y;
   }
@@ -501,6 +502,7 @@ inputDom.onchange = (e: any) => {
       } else {
         crop.initImageSize();
       }
+      crop.handleOnChange();
       crop.render();
     });
   };
