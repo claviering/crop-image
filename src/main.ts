@@ -46,8 +46,6 @@ interface IOption {
   /** canvas height if not will init to iamge height */
   height?: number;
   padding?: number;
-  onChange?: (data: IData) => void;
-  created?: () => void;
 }
 
 interface IPosition {
@@ -93,25 +91,25 @@ class ImageSize {
 
 class CropImage {
   app: HTMLDivElement; // 存放 canvas div
-  img: HTMLImageElement;
-  canvas: HTMLCanvasElement; // canvas
-  ctx: CanvasRenderingContext2D; // canvas content
-  strokeStyle: string = "#999";
+  private img: HTMLImageElement;
+  private canvas: HTMLCanvasElement; // canvas
+  private ctx: CanvasRenderingContext2D; // canvas content
+  private strokeStyle: string = "#999";
   ratio: number = 1;
-  backgroundColor = "#FFF";
   cropRectangle: CropRectangle;
-  moving: boolean = false;
-  resizing: boolean = false;
-  resizeDir: IResizeDir = "";
-  startMovePos: IPosition = { x: 0, y: 0 };
+  private moving: boolean = false;
+  private resizing: boolean = false;
+  private resizeDir: IResizeDir = "";
+  private startMovePos: IPosition = { x: 0, y: 0 };
   /** canvas width if not will init to image width */
-  width?: number;
+  private width?: number;
   /** canvas height if not will init to iamge height */
-  height?: number;
-  padding: number = 0;
-  imageSize = new ImageSize();
-  onChange: (data: IData) => void = () => {};
-  created: () => void = () => {};
+  private height?: number;
+  private padding: number = 0;
+  private imageSize = new ImageSize();
+  onReize: (data: IData) => void = () => {};
+  onMove: (data: IData) => void = () => {};
+  created: (data: IData) => void = () => {};
   constructor(id: string, src: string, option?: IOption) {
     this.app = document.querySelector<HTMLDivElement>(id)!;
     this.canvas = document.createElement("canvas");
@@ -128,7 +126,12 @@ class CropImage {
     this.canvas.addEventListener("mousemove", this.moveMouse.bind(this));
     this.canvas.addEventListener("mouseup", this.endMouse.bind(this));
   }
-  renderBorder(top: number, left: number, width: number, height: number) {
+  private renderBorder(
+    top: number,
+    left: number,
+    width: number,
+    height: number
+  ) {
     this.ctx.strokeStyle = this.strokeStyle;
     this.ctx.lineWidth = 2;
     this.ctx.setLineDash([3]);
@@ -144,11 +147,11 @@ class CropImage {
     ];
     sizeControlPoints.forEach((point) => point.render());
   }
-  drawCover(width: number, height: number) {
+  private drawCover(width: number, height: number) {
     this.ctx.fillStyle = "rgba(0,0,0,0.5)";
     this.ctx.fillRect(0, 0, width, height);
   }
-  moveInside() {
+  private moveInside() {
     let { left, top, width, height } = this.cropRectangle;
     let { virtualWidth, virtualHeight } = this.imageSize;
     let [paddingLeft, paddingTop] = this.getPadding();
@@ -165,7 +168,7 @@ class CropImage {
       this.cropRectangle.top = paddingTop + virtualHeight - height;
     }
   }
-  startMouse(e: MouseEvent) {
+  private startMouse(e: MouseEvent) {
     this.startMovePos = { x: e.clientX, y: e.clientY };
     let cursor = this.canvas.style.cursor;
     if (cursor === "move") {
@@ -174,7 +177,7 @@ class CropImage {
       this.resizing = true;
     }
   }
-  moveMouse(e: MouseEvent) {
+  private moveMouse(e: MouseEvent) {
     const { clientX, clientY } = e;
     const move_x = clientX - this.startMovePos.x;
     const move_y = clientY - this.startMovePos.y;
@@ -183,15 +186,16 @@ class CropImage {
       this.cropRectangle.top += move_y;
       this.moveInside();
       this.render();
-      this.handleOnChange();
+      this.handleOnChange("move");
     } else if (this.resizing) {
       this.resize(move_x);
-      this.handleOnChange();
+      this.render();
+      this.handleOnChange("resize");
     }
     this.startMovePos.x += move_x;
     this.startMovePos.y += move_y;
   }
-  handleOnChange() {
+  getIData(): IData {
     let leftPadding = this.canvas.width / 2 - this.imageSize.virtualWidth / 2;
     let topPadding = this.canvas.height / 2 - this.imageSize.virtualHeight / 2;
     const { left, top, width: cw, height: ch } = this.cropRectangle;
@@ -201,7 +205,7 @@ class CropImage {
       virtualWidth,
       virtualHeight,
     } = this.imageSize;
-    this.onChange({
+    let data: IData = {
       left: left - leftPadding,
       top: top - topPadding,
       virtalCropWidth: cw,
@@ -212,13 +216,25 @@ class CropImage {
       imageHeight: ih,
       imageVirtalWidth: virtualWidth,
       imageVirtalHeight: virtualHeight,
-    });
+    };
+    return data;
   }
-  endMouse() {
+  handleOnChange(type: string) {
+    let data: IData = this.getIData();
+    switch (type) {
+      case "move":
+        this.onMove(data);
+        break;
+      case "resize":
+        this.onReize(data);
+        break;
+    }
+  }
+  private endMouse() {
     this.moving = false;
     this.resizing = false;
   }
-  handleMouseMove(e: MouseEvent) {
+  private handleMouseMove(e: MouseEvent) {
     const { clientX, clientY } = e;
     const { left, top } = this.canvas.getBoundingClientRect();
     const x = clientX - left; // from image top-left
@@ -264,7 +280,7 @@ class CropImage {
     let paddingTop = this.canvas.height / 2 - virtualHeight / 2;
     return [paddingLeft, paddingTop];
   }
-  canZoomIn(dir: IResizeDir, move: number): boolean {
+  private canZoomIn(dir: IResizeDir, move: number): boolean {
     const { left, top, width, height } = this.cropRectangle;
     const { virtualWidth, virtualHeight } = this.imageSize;
     let [paddingLeft, paddingTop] = this.getPadding();
@@ -295,7 +311,7 @@ class CropImage {
     }
     return false;
   }
-  canZoomOut(dir: IResizeDir, move: number): boolean {
+  private canZoomOut(dir: IResizeDir, move: number): boolean {
     const { width, height, min } = this.cropRectangle;
     if (
       (dir === ResizeDir.TOP_LEFR || dir === ResizeDir.BOTTOM_LEFT) &&
@@ -312,7 +328,7 @@ class CropImage {
     }
     return false;
   }
-  resize(move_x: number) {
+  private resize(move_x: number) {
     if (
       !this.canZoomOut(this.resizeDir, move_x) ||
       !this.canZoomIn(this.resizeDir, move_x)
@@ -335,7 +351,6 @@ class CropImage {
       this.cropRectangle.width -= move_x;
       this.cropRectangle.height -= move_x / this.ratio;
     }
-    this.render();
   }
   render = () => {
     requestAnimationFrame(this.render);
@@ -361,7 +376,7 @@ class CropImage {
    *  init canvas width and height, init image, init crop rectangle
    * @param src 图片地址
    */
-  init(src: string) {
+  private init(src: string) {
     const img = new Image();
     img.onload = () => {
       this.img = img;
@@ -373,8 +388,7 @@ class CropImage {
       this.app.innerHTML = "";
       this.app.appendChild(this.canvas);
       requestAnimationFrame(this.render);
-      this.created();
-      this.handleOnChange();
+      this.created(this.getIData());
     };
     img.src = src;
   }
@@ -425,7 +439,7 @@ interface ICropPositionCash {
   [key: number]: CropRectangle;
 }
 
-function getZoomPrototype(dom: HTMLElement, data: IData) {
+function setZoomPrototype(dom: HTMLElement, data: IData): void {
   const {
     imageVirtalWidth,
     imageVirtalHeight,
@@ -440,7 +454,21 @@ function getZoomPrototype(dom: HTMLElement, data: IData) {
   let zoomHeight = (height * imageVirtalHeight) / virtalCropHeight;
   let zoomLeft = (left * zoomWidth) / imageVirtalWidth;
   let zoomTop = (top * zoomHeight) / imageVirtalHeight;
-  return [zoomWidth, zoomHeight, zoomLeft, zoomTop];
+  dom.style.backgroundSize = `${zoomWidth}px ${zoomHeight}px`;
+  dom.style.backgroundPosition = `-${zoomLeft}px -${zoomTop}px`;
+}
+
+let cropPositionCash: ICropPositionCash = {};
+function cacheCropPos(crop: CropImage, data: IData): void {
+  const { virtalCropWidth, virtalCropHeight, left, top } = data;
+  let [paddingLeft, paddingTop] = crop.getPadding();
+  cropPositionCash[crop.ratio] = {
+    left: left + paddingLeft,
+    top: top + paddingTop,
+    width: virtalCropWidth,
+    height: virtalCropHeight,
+    min: crop.cropRectangle.min,
+  };
 }
 
 let inputDom = document.querySelector<HTMLInputElement>("#image")!;
@@ -448,49 +476,39 @@ inputDom.onchange = (e: any) => {
   const file = e.target.files![0];
   const reader = new FileReader();
   reader.onload = () => {
-    let cropPositionCash: ICropPositionCash = {};
+    cropPositionCash = {};
     let crop = new CropImage("#canvas", reader.result as string, {
       width: 640,
       height: 460,
       padding: 40,
-      ratio: 2.35,
+      ratio: 1,
     });
     let imageDom: HTMLDivElement = document.querySelector(".crop-image-1")!;
     let image235Dom: HTMLDivElement =
       document.querySelector(".crop-image-235")!;
     imageDom.style.backgroundImage = `url(${reader.result})`;
-    imageDom.style.backgroundSize = `0px 0px`;
     image235Dom.style.backgroundImage = `url(${reader.result})`;
-    image235Dom.style.backgroundSize = `0px 0px`;
-    crop.created = () => {
-      console.log("created");
+    crop.created = (data: IData) => {
+      setZoomPrototype(imageDom, data);
+      crop.ratio = 2.35;
+      crop.initImageSize();
+      setZoomPrototype(image235Dom, crop.getIData());
     };
-    crop.onChange = (data: IData) => {
-      console.log("data", data);
-      const { virtalCropWidth, virtalCropHeight, left, top } = data;
+    crop.onMove = (data: IData) => {
       if (crop.ratio === 1) {
-        let [zoomWidth, zoomHeight, zoomLeft, zoomTop] = getZoomPrototype(
-          imageDom,
-          data
-        );
-        imageDom.style.backgroundSize = `${zoomWidth}px ${zoomHeight}px`;
-        imageDom.style.backgroundPosition = `-${zoomLeft}px -${zoomTop}px`;
+        setZoomPrototype(imageDom, data);
       } else if (crop.ratio === 2.35) {
-        let [zoomWidth, zoomHeight, zoomLeft, zoomTop] = getZoomPrototype(
-          image235Dom,
-          data
-        );
-        image235Dom.style.backgroundSize = `${zoomWidth}px ${zoomHeight}px`;
-        image235Dom.style.backgroundPosition = `-${zoomLeft}px -${zoomTop}px`;
+        setZoomPrototype(image235Dom, data);
       }
-      let [paddingLeft, paddingTop] = crop.getPadding();
-      cropPositionCash[crop.ratio] = {
-        left: left + paddingLeft,
-        top: top + paddingTop,
-        width: virtalCropWidth,
-        height: virtalCropHeight,
-        min: crop.cropRectangle.min,
-      };
+      cacheCropPos(crop, data);
+    };
+    crop.onReize = (data: IData) => {
+      if (crop.ratio === 1) {
+        setZoomPrototype(imageDom, data);
+      } else if (crop.ratio === 2.35) {
+        setZoomPrototype(image235Dom, data);
+      }
+      cacheCropPos(crop, data);
     };
     let cropOprt = document.querySelector(".crop-oper");
     cropOprt?.addEventListener("click", (e: any) => {
@@ -502,7 +520,6 @@ inputDom.onchange = (e: any) => {
       } else {
         crop.initImageSize();
       }
-      crop.handleOnChange();
       crop.render();
     });
   };
