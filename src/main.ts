@@ -91,7 +91,7 @@ class ImageSize {
 
 class CropImage {
   app: HTMLDivElement; // 存放 canvas div
-  private img: HTMLImageElement;
+  img: HTMLImageElement;
   private canvas: HTMLCanvasElement; // canvas
   private ctx: CanvasRenderingContext2D; // canvas content
   private strokeStyle: string = "#999";
@@ -471,12 +471,18 @@ function cacheCropPos(crop: CropImage, data: IData): void {
   };
 }
 
+let cacheData = {} as {
+  [key: string]: IData;
+};
+function setCacheData(ratio: string, data: IData) {
+  cacheData[ratio] = data;
+}
+
 let inputDom = document.querySelector<HTMLInputElement>("#image")!;
 inputDom.onchange = (e: any) => {
   const file = e.target.files![0];
   const reader = new FileReader();
   reader.onload = () => {
-    cropPositionCash = {};
     let crop = new CropImage("#canvas", reader.result as string, {
       width: 640,
       height: 460,
@@ -489,10 +495,17 @@ inputDom.onchange = (e: any) => {
     imageDom.style.backgroundImage = `url(${reader.result})`;
     image235Dom.style.backgroundImage = `url(${reader.result})`;
     crop.created = (data: IData) => {
+      let cropOprt = document.querySelector(".crop-oper");
+      if (cropOprt) {
+        cropOprt.classList.add("active-235");
+        cropOprt.classList.remove("active-1");
+      }
       setZoomPrototype(imageDom, data);
+      setCacheData(String(crop.ratio), data);
       crop.ratio = 2.35;
       crop.initImageSize();
       setZoomPrototype(image235Dom, crop.getIData());
+      setCacheData(String(crop.ratio), crop.getIData());
     };
     crop.onMove = (data: IData) => {
       if (crop.ratio === 1) {
@@ -501,6 +514,7 @@ inputDom.onchange = (e: any) => {
         setZoomPrototype(image235Dom, data);
       }
       cacheCropPos(crop, data);
+      setCacheData(String(crop.ratio), data);
     };
     crop.onReize = (data: IData) => {
       if (crop.ratio === 1) {
@@ -509,6 +523,7 @@ inputDom.onchange = (e: any) => {
         setZoomPrototype(image235Dom, data);
       }
       cacheCropPos(crop, data);
+      setCacheData(String(crop.ratio), data);
     };
     let cropOprt = document.querySelector(".crop-oper");
     cropOprt?.addEventListener("click", (e: any) => {
@@ -520,8 +535,40 @@ inputDom.onchange = (e: any) => {
       } else {
         crop.initImageSize();
       }
+      if (ratio === 1) {
+        e.currentTarget.classList.add("active-1");
+        e.currentTarget.classList.remove("active-235");
+      } else {
+        e.currentTarget.classList.add("active-235");
+        e.currentTarget.classList.remove("active-1");
+      }
       crop.render();
     });
+    document
+      .querySelector("#canvas-to-canvas")!
+      .addEventListener("click", function () {
+        let canvasDom = document.createElement("canvas");
+        let ctx = canvasDom.getContext("2d");
+        if (!ctx) return;
+        let position = cacheData[String(crop.ratio)];
+        let {
+          cropWidth,
+          cropHeight,
+          virtalCropWidth,
+          virtalCropHeight,
+          top,
+          left,
+        } = position;
+        canvasDom.width = cropWidth;
+        canvasDom.height = cropHeight;
+        let dx = (left * cropWidth) / virtalCropWidth;
+        let dy = (top * cropHeight) / virtalCropHeight;
+        let content = document.querySelector("#canvas-to-canvas-content");
+        if (!content) return;
+        content.innerHTML = "";
+        content.appendChild(canvasDom);
+        ctx.drawImage(crop.img, -dx, -dy);
+      });
   };
   reader.readAsDataURL(file);
 };
