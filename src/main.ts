@@ -1,7 +1,7 @@
 import "./style.css";
 import { SizeControlPoint, radius } from "./SizeControlPoint";
 import { CursorType } from "./CursorType";
-const { neswResize, nwseResize } = CursorType;
+const { neswResize, nwseResize, nsResize, ewResize } = CursorType;
 
 function distance(x1: number, y1: number, x2: number, y2: number) {
   return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
@@ -12,10 +12,18 @@ enum ResizeDir {
   TOP_RIGHT = "top-right",
   BOTTOM_LEFT = "bottom-left",
   BOTTOM_RIGHT = "bottom-right",
+  TOP_MIDDLE = "top-middle",
+  BOTTOM_MIDDLE = "bottom-middle",
+  LEFT_MIDDLE = "left-middle",
+  RIGHT_MIDDLE = "right-middle",
 }
 
 type IResizeDir =
   | ""
+  | "right-middle"
+  | "left-middle"
+  | "bottom-middle"
+  | "top-middle"
   | "top-left"
   | "top-right"
   | "bottom-left"
@@ -95,7 +103,7 @@ class CropImage {
   private canvas: HTMLCanvasElement; // canvas
   private ctx: CanvasRenderingContext2D; // canvas content
   private strokeStyle: string = "#999";
-  ratio: number = 1;
+  ratio: number = 0;
   cropRectangle: CropRectangle;
   private moving: boolean = false;
   private resizing: boolean = false;
@@ -139,12 +147,22 @@ class CropImage {
     let y = top;
     this.ctx.clearRect(x, y, width, height);
     this.ctx.strokeRect(x, y, width, height);
-    const sizeControlPoints = [
+    let sizeControlPoints = [
       new SizeControlPoint(x, y, this.ctx),
       new SizeControlPoint(x + width, y, this.ctx),
       new SizeControlPoint(x + width, y + height, this.ctx),
       new SizeControlPoint(x, y + height, this.ctx),
     ];
+    // 任意裁剪，添加上下左右中心4个点
+    if (this.ratio <= 0) {
+      const appendSizeControlPoint = [
+        new SizeControlPoint(x + width / 2, y, this.ctx),
+        new SizeControlPoint(x + width, y + height / 2, this.ctx),
+        new SizeControlPoint(x + width / 2, y + height, this.ctx),
+        new SizeControlPoint(x, y + height / 2, this.ctx),
+      ];
+      sizeControlPoints = sizeControlPoints.concat(appendSizeControlPoint);
+    }
     sizeControlPoints.forEach((point) => point.render());
   }
   private drawCover(width: number, height: number) {
@@ -170,10 +188,10 @@ class CropImage {
   }
   private startMouse(e: MouseEvent) {
     this.startMovePos = { x: e.clientX, y: e.clientY };
-    let cursor = this.canvas.style.cursor;
+    let cursor = this.canvas.style.cursor as CursorType;
     if (cursor === "move") {
       this.moving = true;
-    } else if (cursor === neswResize || cursor === nwseResize) {
+    } else if ([neswResize, nwseResize, nsResize, ewResize].includes(cursor)) {
       this.resizing = true;
     }
   }
@@ -188,7 +206,7 @@ class CropImage {
       this.render();
       this.handleOnChange("move");
     } else if (this.resizing) {
-      this.resize(move_x);
+      this.resize(move_x, move_y);
       this.render();
       this.handleOnChange("resize");
     }
@@ -272,6 +290,22 @@ class CropImage {
     } else if (distance(crop_left, y2, x, y) < radiusSqrt) {
       this.canvas.style.cursor = neswResize;
       this.resizeDir = ResizeDir.BOTTOM_LEFT;
+    } else if (
+      distance(crop_left + crop_width / 2, crop_top, x, y) < radiusSqrt
+    ) {
+      this.canvas.style.cursor = nsResize;
+      this.resizeDir = ResizeDir.TOP_MIDDLE;
+    } else if (distance(crop_left + crop_width / 2, y2, x, y) < radiusSqrt) {
+      this.canvas.style.cursor = nsResize;
+      this.resizeDir = ResizeDir.BOTTOM_MIDDLE;
+    } else if (
+      distance(crop_left, crop_top + crop_height / 2, x, y) < radiusSqrt
+    ) {
+      this.canvas.style.cursor = ewResize;
+      this.resizeDir = ResizeDir.LEFT_MIDDLE;
+    } else if (distance(x2, crop_top + crop_height / 2, x, y) < radiusSqrt) {
+      this.canvas.style.cursor = ewResize;
+      this.resizeDir = ResizeDir.RIGHT_MIDDLE;
     }
   }
   getPadding() {
@@ -280,7 +314,7 @@ class CropImage {
     let paddingTop = this.canvas.height / 2 - virtualHeight / 2;
     return [paddingLeft, paddingTop];
   }
-  private canZoomIn(dir: IResizeDir, move: number): boolean {
+  private canZoomIn(dir: IResizeDir, move: number, move_y: number): boolean {
     const { left, top, width, height } = this.cropRectangle;
     const { virtualWidth, virtualHeight } = this.imageSize;
     let [paddingLeft, paddingTop] = this.getPadding();
@@ -308,10 +342,24 @@ class CropImage {
       left + move + width < virtualWidth + paddingLeft
     ) {
       return true;
+    } else if (dir === ResizeDir.TOP_MIDDLE && top + move_y > paddingTop) {
+      return true;
+    } else if (
+      dir === ResizeDir.BOTTOM_MIDDLE &&
+      top + move_y + height < virtualHeight + paddingTop
+    ) {
+      return true;
+    } else if (dir === ResizeDir.LEFT_MIDDLE && left + move > paddingLeft) {
+      return true;
+    } else if (
+      dir === ResizeDir.RIGHT_MIDDLE &&
+      left + move + width < virtualWidth + paddingLeft
+    ) {
+      return true;
     }
     return false;
   }
-  private canZoomOut(dir: IResizeDir, move: number): boolean {
+  private canZoomOut(dir: IResizeDir, move: number, move_y: number): boolean {
     const { width, height, min } = this.cropRectangle;
     if (
       (dir === ResizeDir.TOP_LEFR || dir === ResizeDir.BOTTOM_LEFT) &&
@@ -325,35 +373,57 @@ class CropImage {
       height + move > min
     ) {
       return true;
+    } else if (
+      (dir === ResizeDir.TOP_MIDDLE || dir === ResizeDir.BOTTOM_MIDDLE) &&
+      height + move_y > min
+    ) {
+      return true;
+    } else if (
+      (dir === ResizeDir.LEFT_MIDDLE || dir === ResizeDir.RIGHT_MIDDLE) &&
+      width + move > min
+    ) {
+      return true;
     }
     return false;
   }
-  private resize(move_x: number) {
+  private resize(move_x: number, move_y: number) {
     if (
-      !this.canZoomOut(this.resizeDir, move_x) ||
-      !this.canZoomIn(this.resizeDir, move_x)
+      !this.canZoomOut(this.resizeDir, move_x, move_y) ||
+      !this.canZoomIn(this.resizeDir, move_x, move_y)
     )
       return;
+    let ratio =
+      this.ratio || this.cropRectangle.width / this.cropRectangle.height;
     if (this.resizeDir === ResizeDir.TOP_LEFR) {
       this.cropRectangle.left += move_x;
-      this.cropRectangle.top += move_x / this.ratio;
+      this.cropRectangle.top += move_x / ratio;
       this.cropRectangle.width -= move_x;
-      this.cropRectangle.height -= move_x / this.ratio;
+      this.cropRectangle.height -= move_x / ratio;
     } else if (this.resizeDir === ResizeDir.TOP_RIGHT) {
-      this.cropRectangle.top -= move_x / this.ratio;
+      this.cropRectangle.top -= move_x / ratio;
       this.cropRectangle.width += move_x;
-      this.cropRectangle.height += move_x / this.ratio;
+      this.cropRectangle.height += move_x / ratio;
     } else if (this.resizeDir === ResizeDir.BOTTOM_RIGHT) {
       this.cropRectangle.width += move_x;
-      this.cropRectangle.height += move_x / this.ratio;
+      this.cropRectangle.height += move_x / ratio;
     } else if (this.resizeDir === ResizeDir.BOTTOM_LEFT) {
       this.cropRectangle.left += move_x;
       this.cropRectangle.width -= move_x;
-      this.cropRectangle.height -= move_x / this.ratio;
+      this.cropRectangle.height -= move_x / ratio;
+    } else if (this.resizeDir === ResizeDir.TOP_MIDDLE) {
+      this.cropRectangle.top += move_y;
+      this.cropRectangle.height -= move_y;
+    } else if (this.resizeDir === ResizeDir.BOTTOM_MIDDLE) {
+      this.cropRectangle.height += move_y;
+    } else if (this.resizeDir === ResizeDir.LEFT_MIDDLE) {
+      this.cropRectangle.left += move_x;
+      this.cropRectangle.width -= move_x;
+    } else if (this.resizeDir === ResizeDir.RIGHT_MIDDLE) {
+      this.cropRectangle.width += move_x;
     }
   }
   render = () => {
-    requestAnimationFrame(this.render);
+    // requestAnimationFrame(this.render);
     this.ctx.globalCompositeOperation = "source-over";
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.drawCover(this.canvas.width, this.canvas.height);
@@ -404,7 +474,7 @@ class CropImage {
     let ch = this.canvas.height;
     let iw = this.img.width;
     let ih = this.img.height;
-    let ratio = this.ratio;
+    let ratio = this.ratio || iw / ih;
     cw = cw - this.padding * 2;
     ch = ch - this.padding * 2;
     // zoom image
@@ -487,26 +557,26 @@ inputDom.onchange = (e: any) => {
       width: 640,
       height: 460,
       padding: 40,
-      ratio: 1,
+      ratio: 0,
     });
     let imageDom: HTMLDivElement = document.querySelector(".crop-image-1")!;
     let image235Dom: HTMLDivElement =
       document.querySelector(".crop-image-235")!;
     imageDom.style.backgroundImage = `url(${reader.result})`;
     image235Dom.style.backgroundImage = `url(${reader.result})`;
-    crop.created = (data: IData) => {
-      let cropOprt = document.querySelector(".crop-oper");
-      if (cropOprt) {
-        cropOprt.classList.add("active-235");
-        cropOprt.classList.remove("active-1");
-      }
-      setZoomPrototype(imageDom, data);
-      setCacheData(String(crop.ratio), data);
-      crop.ratio = 2.35;
-      crop.initImageSize();
-      setZoomPrototype(image235Dom, crop.getIData());
-      setCacheData(String(crop.ratio), crop.getIData());
-    };
+    // crop.created = (data: IData) => {
+    //   let cropOprt = document.querySelector(".crop-oper");
+    //   if (cropOprt) {
+    //     cropOprt.classList.add("active-235");
+    //     cropOprt.classList.remove("active-1");
+    //   }
+    //   setZoomPrototype(imageDom, data);
+    //   setCacheData(String(crop.ratio), data);
+    //   crop.ratio = 2.35;
+    //   crop.initImageSize();
+    //   setZoomPrototype(image235Dom, crop.getIData());
+    //   setCacheData(String(crop.ratio), crop.getIData());
+    // };
     crop.onMove = (data: IData) => {
       if (crop.ratio === 1) {
         setZoomPrototype(imageDom, data);

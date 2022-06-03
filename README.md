@@ -31,3 +31,7 @@
 | height  | canvas height                    |
 | ratio   | crop rectangle ratio             |
 | padding | padding between canvas and image |
+
+## ratio == 0
+
+It can crop for any size
