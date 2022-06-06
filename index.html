@@ -9,9 +9,10 @@
 </head>
 
 <body>
-  <div id="app">
+  <h1>crop image ratio to 2.25:1 and 1:1</h1>
+  <div class="app">
     <div class="crop-content">
-      <div id="canvas"></div>
+      <div id="canvas" class="canvas-container"></div>
       <div class="crop-oper active-235">
         <div class="crop-oprt-item" data-ratio="2.35">
           <div data-ratio="2.35">
@@ -27,12 +28,29 @@
 
           </div>
         </div>
-        <button id="canvas-to-canvas" class="upload-but"> canvas to canvas</button>
+        <div>
+          <label class="upload-but" for="image">Upload Image</label>
+          <input style="display: none;" type="file" id="image" name="image" accept='image/*'>
+        </div>
+        <button id="canvas-to-canvas" class="upload-but mt-12"> canvas to canvas</button>
+        <div id="crop-image-container-1"></div>
       </div>
     </div>
-    <label class="upload-but" for="image">Upload Image</label>
-    <input style="display: none;" type="file" id="image" name="image" accept='image/*'>
-    <div id="canvas-to-canvas-content"></div>
+  </div>
+  <h1>crop for any ratio (set ratio: 0)</h1>
+  <div class="app">
+    <div class="crop-content">
+      <div id="canvas-ratio0" class="canvas-container">
+      </div>
+      <div class="crop-oper">
+        <div class="">
+          <label class="upload-but" for="ratio0">Upload Image</label>
+          <input style="display: none;" type="file" id="ratio0" name="ratio0" accept='image/*'>
+        </div>
+        <button id="ratio0-c2c" class="upload-but mt-12"> canvas to canvas</button>
+        <div class="mt-12" id="crop-image-container-0"></div>
+      </div>
+    </div>
   </div>
   <script type="module" src="/src/main.ts"></script>
 </body>

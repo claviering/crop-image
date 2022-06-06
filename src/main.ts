@@ -53,26 +53,26 @@ inputDom.onchange = (e: any) => {
       width: 640,
       height: 460,
       padding: 40,
-      ratio: 0,
+      ratio: 1,
     });
     let imageDom: HTMLDivElement = document.querySelector(".crop-image-1")!;
     let image235Dom: HTMLDivElement =
       document.querySelector(".crop-image-235")!;
     imageDom.style.backgroundImage = `url(${reader.result})`;
     image235Dom.style.backgroundImage = `url(${reader.result})`;
-    // crop.created = (data: IData) => {
-    //   let cropOprt = document.querySelector(".crop-oper");
-    //   if (cropOprt) {
-    //     cropOprt.classList.add("active-235");
-    //     cropOprt.classList.remove("active-1");
-    //   }
-    //   setZoomPrototype(imageDom, data);
-    //   setCacheData(String(crop.ratio), data);
-    //   crop.ratio = 2.35;
-    //   crop.initImageSize();
-    //   setZoomPrototype(image235Dom, crop.getIData());
-    //   setCacheData(String(crop.ratio), crop.getIData());
-    // };
+    crop.created = (data: IData) => {
+      let cropOprt = document.querySelector(".crop-oper");
+      if (cropOprt) {
+        cropOprt.classList.add("active-235");
+        cropOprt.classList.remove("active-1");
+      }
+      setZoomPrototype(imageDom, data);
+      setCacheData(String(crop.ratio), data);
+      crop.ratio = 2.35;
+      crop.initImageSize();
+      setZoomPrototype(image235Dom, crop.getIData());
+      setCacheData(String(crop.ratio), crop.getIData());
+    };
     crop.onMove = (data: IData) => {
       if (crop.ratio === 1) {
         setZoomPrototype(imageDom, data);
@@ -115,13 +115,31 @@ inputDom.onchange = (e: any) => {
       crop.getCurrentBlob().then((blob) => {
         let imageDom = document.createElement("img") as HTMLImageElement;
         imageDom.src = URL.createObjectURL(blob);
-        let imageContainer = document.querySelector(
-          "#canvas-to-canvas-content"
-        )!;
+        let imageContainer = document.querySelector("#crop-image-container-1")!;
         imageContainer.innerHTML = "";
         imageContainer.appendChild(imageDom);
       });
     });
   };
   reader.readAsDataURL(file);
+};
+
+let ratio0InputDom = document.querySelector<HTMLInputElement>("#ratio0")!;
+ratio0InputDom.onchange = (e: any) => {
+  const file = e.target.files![0];
+  let crop = new CropImage("#canvas-ratio0", file, {
+    width: 640,
+    height: 460,
+    padding: 40,
+    ratio: 0,
+  });
+  document.querySelector("#ratio0-c2c")?.addEventListener("click", function () {
+    crop.getCurrentBlob().then((blob) => {
+      let imageDom = document.createElement("img") as HTMLImageElement;
+      imageDom.src = URL.createObjectURL(blob);
+      let imageContainer = document.querySelector("#crop-image-container-0")!;
+      imageContainer.innerHTML = "";
+      imageContainer.appendChild(imageDom);
+    });
+  });
 };

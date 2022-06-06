@@ -117,8 +117,11 @@ export class CropImage {
   onReize: (data: IData) => void = () => {};
   onMove: (data: IData) => void = () => {};
   created: (data: IData) => void = () => {};
-  constructor(id: string, src: string, option?: IOption) {
-    this.app = document.querySelector<HTMLDivElement>(id)!;
+  constructor(id: string | Element, src: string | File, option?: IOption) {
+    this.app =
+      typeof id == "string"
+        ? document.querySelector<HTMLDivElement>(id)!
+        : (id as HTMLDivElement);
     this.canvas = document.createElement("canvas");
     this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
     if (option) {
@@ -165,7 +168,7 @@ export class CropImage {
     sizeControlPoints.forEach((point) => point.render());
   }
   private drawCover(width: number, height: number) {
-    this.ctx.fillStyle = "rgba(0,0,0,0.5)";
+    this.ctx.fillStyle = "rgba(0,0,0,0.4)";
     this.ctx.fillRect(0, 0, width, height);
   }
   private moveInside() {
@@ -443,9 +446,15 @@ export class CropImage {
   };
   /**
    *  init canvas width and height, init image, init crop rectangle
-   * @param src 图片地址
+   * @param src 图片地址, or image file
    */
-  private init(src: string) {
+  private init(src: string | File) {
+    let _src: string;
+    if (src instanceof File) {
+      _src = URL.createObjectURL(src);
+    } else {
+      _src = src;
+    }
     const img = new Image();
     img.onload = () => {
       this.img = img;
@@ -459,7 +468,7 @@ export class CropImage {
       requestAnimationFrame(this.render);
       this.created(this.getIData());
     };
-    img.src = src;
+    img.src = _src;
   }
   /**
    * calc the crop rectangle and image position and size
