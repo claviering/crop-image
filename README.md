@@ -21,7 +21,7 @@
 
 ## Try It Online
 
-[Deom](https://stackblitz.com/edit/weiye-crop-image?embed=1&file=index.html)
+[Demo](https://stackblitz.com/edit/weiye-crop-image?embed=1&file=index.html)
 
 ## Options
 
@@ -35,3 +35,5 @@
 ## ratio == 0
 
 It can crop for any size
+
+![screenshot](https://s1.ax1x.com/2022/06/06/XwI4ED.png)
