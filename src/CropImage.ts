@@ -101,6 +101,8 @@ export class CropImage {
   img: HTMLImageElement;
   private canvas: HTMLCanvasElement; // canvas
   private ctx: CanvasRenderingContext2D; // canvas content
+  private imgCanvas: HTMLCanvasElement; // canvas
+  private imgCtx: CanvasRenderingContext2D; // canvas content
   private strokeStyle: string = "#999";
   ratio: number = 0;
   cropRectangle: CropRectangle;
@@ -124,6 +126,8 @@ export class CropImage {
         : (id as HTMLDivElement);
     this.canvas = document.createElement("canvas");
     this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
+    this.imgCanvas = document.createElement("canvas");
+    this.imgCtx = this.imgCanvas.getContext("2d") as CanvasRenderingContext2D;
     if (option) {
       // @ts-ignore
       Object.entries(option).forEach(([key, value]) => (this[key] = value));
@@ -424,6 +428,15 @@ export class CropImage {
       this.cropRectangle.width += move_x;
     }
   }
+  private renderImageCanver() {
+    this.imgCtx.drawImage(
+      this.img,
+      this.canvas.width / 2 - this.imageSize.virtualWidth / 2,
+      this.canvas.height / 2 - this.imageSize.virtualHeight / 2,
+      this.imageSize.virtualWidth,
+      this.imageSize.virtualHeight
+    );
+  }
   render = () => {
     // requestAnimationFrame(this.render);
     this.ctx.globalCompositeOperation = "source-over";
@@ -434,14 +447,6 @@ export class CropImage {
       this.cropRectangle.left,
       this.cropRectangle.width,
       this.cropRectangle.height
-    );
-    this.ctx.globalCompositeOperation = "destination-over";
-    this.ctx.drawImage(
-      this.img,
-      this.canvas.width / 2 - this.imageSize.virtualWidth / 2,
-      this.canvas.height / 2 - this.imageSize.virtualHeight / 2,
-      this.imageSize.virtualWidth,
-      this.imageSize.virtualHeight
     );
   };
   /**
@@ -462,9 +467,13 @@ export class CropImage {
       let height = img.height;
       this.canvas.width = (this.width || width) + this.padding * 2;
       this.canvas.height = (this.height || height) + this.padding * 2;
+      this.imgCanvas.width = this.canvas.width;
+      this.imgCanvas.height = this.canvas.height;
       this.initImageSize();
       this.app.innerHTML = "";
+      this.app.appendChild(this.imgCanvas);
       this.app.appendChild(this.canvas);
+      this.renderImageCanver();
       requestAnimationFrame(this.render);
       this.created(this.getIData());
     };
