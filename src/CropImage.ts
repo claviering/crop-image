@@ -284,32 +284,32 @@ export class CropImage {
     let radiusSqrt = radius * radius;
     let x2 = crop_left + crop_width;
     let y2 = crop_top + crop_height;
-    if (distance(crop_left, crop_top, x, y) < radiusSqrt) {
+    function isInside(x0: number, y0: number) {
+      return distance(x0, y0, x, y) < radiusSqrt;
+    }
+    let isAnyRatio = this.ratio <= 0;
+    if (isInside(crop_left, crop_top)) {
       this.canvas.style.cursor = nwseResize;
       this.resizeDir = ResizeDir.TOP_LEFR;
-    } else if (distance(x2, y2, x, y) < radiusSqrt) {
+    } else if (isInside(x2, y2)) {
       this.canvas.style.cursor = nwseResize;
       this.resizeDir = ResizeDir.BOTTOM_RIGHT;
-    } else if (distance(x2, crop_top, x, y) < radiusSqrt) {
+    } else if (isInside(x2, crop_top)) {
       this.canvas.style.cursor = neswResize;
       this.resizeDir = ResizeDir.TOP_RIGHT;
-    } else if (distance(crop_left, y2, x, y) < radiusSqrt) {
+    } else if (isInside(crop_left, y2)) {
       this.canvas.style.cursor = neswResize;
       this.resizeDir = ResizeDir.BOTTOM_LEFT;
-    } else if (
-      distance(crop_left + crop_width / 2, crop_top, x, y) < radiusSqrt
-    ) {
+    } else if (isAnyRatio && isInside(crop_left + crop_width / 2, crop_top)) {
       this.canvas.style.cursor = nsResize;
       this.resizeDir = ResizeDir.TOP_MIDDLE;
-    } else if (distance(crop_left + crop_width / 2, y2, x, y) < radiusSqrt) {
+    } else if (isAnyRatio && isInside(crop_left + crop_width / 2, y2)) {
       this.canvas.style.cursor = nsResize;
       this.resizeDir = ResizeDir.BOTTOM_MIDDLE;
-    } else if (
-      distance(crop_left, crop_top + crop_height / 2, x, y) < radiusSqrt
-    ) {
+    } else if (isAnyRatio && isInside(crop_left, crop_top + crop_height / 2)) {
       this.canvas.style.cursor = ewResize;
       this.resizeDir = ResizeDir.LEFT_MIDDLE;
-    } else if (distance(x2, crop_top + crop_height / 2, x, y) < radiusSqrt) {
+    } else if (isAnyRatio && isInside(x2, crop_top + crop_height / 2)) {
       this.canvas.style.cursor = ewResize;
       this.resizeDir = ResizeDir.RIGHT_MIDDLE;
     }
