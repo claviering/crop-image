@@ -472,6 +472,7 @@ export class CropImage {
       _src = src;
     }
     const img = new Image();
+    debugger;
     img.onload = () => {
       this.img = img;
       let width = img.width;
@@ -487,6 +488,9 @@ export class CropImage {
       this.renderImageCanver();
       requestAnimationFrame(this.render);
       this.created(this.getIData());
+    };
+    img.onerror = function () {
+      throw "image load error";
     };
     img.src = _src;
   }
