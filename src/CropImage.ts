@@ -1,5 +1,5 @@
-import { SizeControlPoint, radius } from "./SizeControlPoint";
-import { CursorType } from "./CursorType";
+import { SizeControlPoint, radius } from "./sizeControlPoint";
+import { CursorType } from "./cursorType";
 const { neswResize, nwseResize, nsResize, ewResize } = CursorType;
 
 export interface IData {
@@ -27,6 +27,10 @@ interface IOption {
   /** canvas height if not will init to iamge height */
   height?: number;
   padding?: number;
+  /**裁剪的固定宽度 */
+  cropWidth?: number;
+  /**裁剪的高定宽度 */
+  cropHeight?: number;
 }
 
 interface IPosition {
@@ -116,6 +120,10 @@ export class CropImage {
   private height?: number;
   private padding: number = 0;
   private imageSize = new ImageSize();
+  /**裁剪的固定宽度 */
+  private cropWidth?: number;
+  /**裁剪的高定宽度 */
+  private cropHeight?: number;
   onReize: (data: IData) => void = () => {};
   onMove: (data: IData) => void = () => {};
   created: (data: IData) => void = () => {};
@@ -169,7 +177,9 @@ export class CropImage {
       ];
       sizeControlPoints = sizeControlPoints.concat(appendSizeControlPoint);
     }
-    sizeControlPoints.forEach((point) => point.render());
+    if (!this.isKeepCropSize()) {
+      sizeControlPoints.forEach((point) => point.render());
+    }
   }
   private drawCover(width: number, height: number) {
     this.ctx.fillStyle = "rgba(0,0,0,0.4)";
@@ -281,6 +291,7 @@ export class CropImage {
         this.canvas.style.cursor = "default";
       }
     }
+    if (this.isKeepCropSize()) return;
     let radiusSqrt = radius * radius;
     let x2 = crop_left + crop_width;
     let y2 = crop_top + crop_height;
@@ -479,6 +490,17 @@ export class CropImage {
     };
     img.src = _src;
   }
+  isKeepCropSize(): boolean {
+    let width = this.imageSize.virtualWidth;
+    let height = this.imageSize.virtualHeight;
+    if (this.cropWidth && this.cropHeight) {
+      if (this.cropWidth > width || this.cropHeight > height) {
+        throw "裁剪大小不能超过图片大小";
+      }
+      return true;
+    }
+    return false;
+  }
   /**
    * calc the crop rectangle and image position and size
    * @param cw canvas width
@@ -508,6 +530,10 @@ export class CropImage {
     let height = this.imageSize.virtualHeight;
     let crop_width = width <= height * ratio ? width : height * ratio; // 图片裁剪宽度
     let crop_height = width <= height * ratio ? width / ratio : height; // 图片裁剪高度
+    if (this.isKeepCropSize()) {
+      crop_width = this.cropWidth as number;
+      crop_height = this.cropHeight as number;
+    }
     this.initCrop({
       left: (cw - crop_width + this.padding * 2) / 2,
       top: (ch - crop_height + this.padding * 2) / 2,

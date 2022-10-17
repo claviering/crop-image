@@ -1,5 +1,5 @@
 import "./style.css";
-import { CropImage, IData, CropRectangle } from "./CropImage";
+import { CropImage, IData, CropRectangle } from "./cropImage";
 
 interface ICropPositionCash {
   [key: number]: CropRectangle;
@@ -138,6 +138,28 @@ ratio0InputDom.onchange = (e: any) => {
       let imageDom = document.createElement("img") as HTMLImageElement;
       imageDom.src = URL.createObjectURL(blob);
       let imageContainer = document.querySelector("#crop-image-container-0")!;
+      imageContainer.innerHTML = "";
+      imageContainer.appendChild(imageDom);
+    });
+  });
+};
+
+let ratio1InputDom = document.querySelector<HTMLInputElement>("#ratio2")!;
+ratio1InputDom.onchange = (e: any) => {
+  const file = e.target.files![0];
+  let crop = new CropImage("#canvas-ratio2", file, {
+    width: 640,
+    height: 460,
+    padding: 40,
+    ratio: 1,
+    cropWidth: 700,
+    cropHeight: 200,
+  });
+  document.querySelector("#ratio2-c2c")?.addEventListener("click", function () {
+    crop.getCurrentBlob().then((blob) => {
+      let imageDom = document.createElement("img") as HTMLImageElement;
+      imageDom.src = URL.createObjectURL(blob);
+      let imageContainer = document.querySelector("#crop-image-container-2")!;
       imageContainer.innerHTML = "";
       imageContainer.appendChild(imageDom);
     });
