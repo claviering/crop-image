@@ -152,8 +152,8 @@ ratio1InputDom.onchange = (e: any) => {
     height: 460,
     padding: 40,
     ratio: 1,
-    cropWidth: 700,
-    cropHeight: 200,
+    cropWidth: 200,
+    cropHeight: 192,
   });
   document.querySelector("#ratio2-c2c")?.addEventListener("click", function () {
     crop.getCurrentBlob().then((blob) => {

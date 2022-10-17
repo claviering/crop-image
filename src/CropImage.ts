@@ -244,8 +244,8 @@ export class CropImage {
       top: top - topPadding,
       virtalCropWidth: cw,
       virtalCropHeight: ch,
-      cropWidth: (iw * cw) / virtualWidth,
-      cropHeight: (ih * ch) / virtualHeight,
+      cropWidth: Math.ceil((iw * cw) / virtualWidth),
+      cropHeight: Math.ceil((ih * ch) / virtualHeight),
       imageWidth: iw,
       imageHeight: ih,
       imageVirtalWidth: virtualWidth,
@@ -472,7 +472,6 @@ export class CropImage {
       _src = src;
     }
     const img = new Image();
-    debugger;
     img.onload = () => {
       this.img = img;
       let width = img.width;
@@ -530,13 +529,18 @@ export class CropImage {
     } else {
       this.imageSize = new ImageSize(iw, ih, iw, ih);
     }
-    let width = this.imageSize.virtualWidth;
-    let height = this.imageSize.virtualHeight;
-    let crop_width = width <= height * ratio ? width : height * ratio; // 图片裁剪宽度
-    let crop_height = width <= height * ratio ? width / ratio : height; // 图片裁剪高度
-    if (this.isKeepCropSize()) {
-      crop_width = this.cropWidth as number;
-      crop_height = this.cropHeight as number;
+    console.log("this.imageSize", this.imageSize);
+    let {
+      virtualWidth: v_w,
+      virtualHeight: v_h,
+      width,
+      height,
+    } = this.imageSize;
+    let crop_width = v_w <= v_h * ratio ? v_w : v_h * ratio; // 图片裁剪宽度
+    let crop_height = v_w <= v_h * ratio ? v_w / ratio : v_h; // 图片裁剪高度
+    if (this.cropWidth && this.cropHeight && this.isKeepCropSize()) {
+      crop_width = this.cropWidth * (v_w / width);
+      crop_height = this.cropHeight * (v_h / height);
     }
     this.initCrop({
       left: (cw - crop_width + this.padding * 2) / 2,
