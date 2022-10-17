@@ -494,8 +494,8 @@ export class CropImage {
     img.src = _src;
   }
   isKeepCropSize(): boolean {
-    let width = this.imageSize.virtualWidth;
-    let height = this.imageSize.virtualHeight;
+    let width = this.imageSize.width;
+    let height = this.imageSize.height;
     if (this.cropWidth && this.cropHeight) {
       if (this.cropWidth > width || this.cropHeight > height) {
         throw "裁剪大小不能超过图片大小";
