@@ -177,9 +177,9 @@ export class CropImage {
       ];
       sizeControlPoints = sizeControlPoints.concat(appendSizeControlPoint);
     }
-    if (!this.isKeepCropSize()) {
-      sizeControlPoints.forEach((point) => point.render());
-    }
+    // if (!this.isKeepCropSize()) {
+    // }
+    sizeControlPoints.forEach((point) => point.render());
   }
   private drawCover(width: number, height: number) {
     this.ctx.fillStyle = "rgba(0,0,0,0.4)";
@@ -219,7 +219,8 @@ export class CropImage {
       this.cropRectangle.left += move_x;
       this.cropRectangle.top += move_y;
       this.moveInside();
-      this.render();
+      requestAnimationFrame(this.render);
+      // this.render();
       this.handleOnChange("move");
     } else if (this.resizing) {
       this.resize(move_x, move_y);
@@ -491,6 +492,7 @@ export class CropImage {
     img.onerror = function () {
       throw "image load error";
     };
+    img.crossOrigin = "anonymous";
     img.src = _src;
   }
   isKeepCropSize(): boolean {
@@ -498,6 +500,7 @@ export class CropImage {
     let height = this.imageSize.height;
     if (this.cropWidth && this.cropHeight) {
       if (this.cropWidth > width || this.cropHeight > height) {
+        window.alert("裁剪大小不能超过图片大小");
         throw "裁剪大小不能超过图片大小";
       }
       return true;
