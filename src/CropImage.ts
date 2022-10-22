@@ -461,6 +461,16 @@ export class CropImage {
       this.cropRectangle.height
     );
   };
+  private isComfort(width: number, height: number) {
+    if (
+      this.cropWidth &&
+      this.cropHeight &&
+      (width < this.cropWidth || height < this.cropHeight)
+    ) {
+      window.alert(`请上传大于${width}x${height}的图片`);
+      throw "裁剪大小不能超过图片大小";
+    }
+  }
   /**
    *  init canvas width and height, init image, init crop rectangle
    * @param src 图片地址, or image file
@@ -477,6 +487,7 @@ export class CropImage {
       this.img = img;
       let width = img.width;
       let height = img.height;
+      this.isComfort(width, height);
       this.canvas.width = (this.width || width) + this.padding * 2;
       this.canvas.height = (this.height || height) + this.padding * 2;
       this.imgCanvas.width = this.canvas.width;
@@ -496,13 +507,7 @@ export class CropImage {
     img.src = _src;
   }
   isKeepCropSize(): boolean {
-    let width = this.imageSize.width;
-    let height = this.imageSize.height;
     if (this.cropWidth && this.cropHeight) {
-      if (this.cropWidth > width || this.cropHeight > height) {
-        window.alert("裁剪大小不能超过图片大小");
-        throw "裁剪大小不能超过图片大小";
-      }
       return true;
     }
     return false;
@@ -532,7 +537,6 @@ export class CropImage {
     } else {
       this.imageSize = new ImageSize(iw, ih, iw, ih);
     }
-    console.log("this.imageSize", this.imageSize);
     let {
       virtualWidth: v_w,
       virtualHeight: v_h,

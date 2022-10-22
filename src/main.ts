@@ -147,21 +147,29 @@ ratio0InputDom.onchange = (e: any) => {
 let ratio1InputDom = document.querySelector<HTMLInputElement>("#ratio2")!;
 ratio1InputDom.onchange = (e: any) => {
   const file = e.target.files![0];
-  let crop = new CropImage("#canvas-ratio2", file, {
-    width: 640,
-    height: 460,
-    padding: 40,
-    ratio: 1,
-    cropWidth: 200,
-    cropHeight: 192,
-  });
-  document.querySelector("#ratio2-c2c")?.addEventListener("click", function () {
-    crop.getCurrentBlob().then((blob) => {
-      let imageDom = document.createElement("img") as HTMLImageElement;
-      imageDom.src = URL.createObjectURL(blob);
-      let imageContainer = document.querySelector("#crop-image-container-2")!;
-      imageContainer.innerHTML = "";
-      imageContainer.appendChild(imageDom);
+  try {
+    let crop = new CropImage("#canvas-ratio2", file, {
+      width: 640,
+      height: 460,
+      padding: 40,
+      ratio: 1,
+      cropWidth: 200,
+      cropHeight: 192,
     });
-  });
+    document
+      .querySelector("#ratio2-c2c")
+      ?.addEventListener("click", function () {
+        crop.getCurrentBlob().then((blob) => {
+          let imageDom = document.createElement("img") as HTMLImageElement;
+          imageDom.src = URL.createObjectURL(blob);
+          let imageContainer = document.querySelector(
+            "#crop-image-container-2"
+          )!;
+          imageContainer.innerHTML = "";
+          imageContainer.appendChild(imageDom);
+        });
+      });
+  } catch (error) {
+    console.log("1111", error);
+  }
 };
