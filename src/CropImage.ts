@@ -177,9 +177,9 @@ export class CropImage {
       ];
       sizeControlPoints = sizeControlPoints.concat(appendSizeControlPoint);
     }
-    // if (!this.isKeepCropSize()) {
-    // }
-    sizeControlPoints.forEach((point) => point.render());
+    if (!this.isKeepCropSize()) {
+      sizeControlPoints.forEach((point) => point.render());
+    }
   }
   private drawCover(width: number, height: number) {
     this.ctx.fillStyle = "rgba(0,0,0,0.4)";
@@ -561,23 +561,37 @@ export class CropImage {
     const { left, top, width, height } = option;
     this.cropRectangle = new CropRectangle(left, top, width, height);
   }
-  getCurrentBlob(): Promise<Blob> {
+  /**
+   *
+   * @param width new image width
+   * @param height new image height
+   * @returns
+   */
+  getCurrentBlob(width?: number, height?: number): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const newCanvas = document.createElement("canvas");
-      const {
+      let {
         cropWidth,
         cropHeight,
         virtalCropWidth,
         virtalCropHeight,
         top,
         left,
+        imageVirtalWidth,
+        imageVirtalHeight,
       } = this.getIData();
+      if (width && height) {
+        cropWidth = width;
+        cropHeight = height;
+      }
       newCanvas.width = cropWidth;
       newCanvas.height = cropHeight;
       let dx = (left * cropWidth) / virtalCropWidth;
       let dy = (top * cropHeight) / virtalCropHeight;
       const ctx = newCanvas.getContext("2d");
-      ctx?.drawImage(this.img, -dx, -dy);
+      let dWidth = (cropWidth * imageVirtalWidth) / virtalCropWidth;
+      let dHeight = (cropHeight * imageVirtalHeight) / virtalCropHeight;
+      ctx?.drawImage(this.img, -dx, -dy, dWidth, dHeight);
       newCanvas.toBlob((blob) => {
         blob ? resolve(blob) : reject("Error");
       }, "image/jpeg");

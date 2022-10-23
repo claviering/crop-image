@@ -68,7 +68,7 @@ inputDom.onchange = (e: any) => {
       }
       setZoomPrototype(imageDom, data);
       setCacheData(String(crop.ratio), data);
-      crop.ratio = 2.35;
+      crop.ratio = 16 / 9;
       crop.initImageSize();
       setZoomPrototype(image235Dom, crop.getIData());
       setCacheData(String(crop.ratio), crop.getIData());
@@ -144,8 +144,8 @@ ratio0InputDom.onchange = (e: any) => {
   });
 };
 
-let ratio1InputDom = document.querySelector<HTMLInputElement>("#ratio2")!;
-ratio1InputDom.onchange = (e: any) => {
+let ratio2InputDom = document.querySelector<HTMLInputElement>("#ratio2")!;
+ratio2InputDom.onchange = (e: any) => {
   const file = e.target.files![0];
   try {
     let crop = new CropImage("#canvas-ratio2", file, {
@@ -154,7 +154,7 @@ ratio1InputDom.onchange = (e: any) => {
       padding: 40,
       ratio: 1,
       cropWidth: 200,
-      cropHeight: 192,
+      cropHeight: 200,
     });
     document
       .querySelector("#ratio2-c2c")
@@ -172,4 +172,36 @@ ratio1InputDom.onchange = (e: any) => {
   } catch (error) {
     console.log("1111", error);
   }
+};
+
+let ratio3InputDom = document.querySelector<HTMLInputElement>("#ratio3")!;
+ratio3InputDom.onchange = (e: any) => {
+  const file = e.target.files![0];
+  let crop = new CropImage("#canvas-ratio3", file, {
+    width: 640,
+    height: 460,
+    padding: 40,
+    ratio: 1,
+  });
+  document.querySelector("#ratio3-c2c")?.addEventListener("click", function () {
+    crop.getCurrentBlob(500, 500).then((blob) => {
+      let imageDom = document.createElement("img") as HTMLImageElement;
+      imageDom.src = URL.createObjectURL(blob);
+      let imageContainer = document.querySelector("#crop-image-container-3")!;
+      imageContainer.innerHTML = "";
+      imageContainer.appendChild(imageDom);
+
+      // imageDom.onload = () => {
+      //   const newCanvas = document.createElement("canvas");
+      //   newCanvas.width = 500;
+      //   newCanvas.height = 500;
+      //   const ctx = newCanvas.getContext("2d");
+      //   ctx?.drawImage(imageDom, 0, 0, 500, 500);
+      //   let imageContainer = document.querySelector("#crop-image-container-3")!;
+      //   imageContainer.innerHTML = "";
+      //   imageContainer.appendChild(newCanvas);
+      // };
+      // imageDom.src = URL.createObjectURL(blob);
+    });
+  });
 };
