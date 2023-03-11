@@ -1,13 +1,33 @@
 {
-  "name": "crop-image",
-  "private": true,
-  "version": "0.0.0",
+  "name": "@nfplus/image-crop",
+  "description": "图片裁剪",
+  "version": "0.0.1",
+  "author": "weiye",
+  "type": "module",
+  "keywords": [
+    "image crop"
+  ],
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.umd.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.umd.cjs"
+    },
+    "./dist/style.css": "./dist/style.css"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@rollup/plugin-typescript": "^11.0.0",
+    "path": "^0.12.7",
     "typescript": "^4.9.5",
     "vite": "^4.1.4"
   }

@@ -1,6 +1,7 @@
 import { SizeControlPoint, radius } from "./sizeControlPoint";
 import { CursorType } from "./cursorType";
 const { neswResize, nwseResize, nsResize, ewResize } = CursorType;
+import "./index.css";
 
 export interface IData {
   /** crop left */
@@ -568,7 +569,7 @@ export class CropImage {
    * @returns
    */
   getCurrentBlob(width?: number, height?: number): Promise<Blob> {
-    return new Promise((resolve, reject) => {
+    return new Promise<Blob>((resolve, reject) => {
       const newCanvas = document.createElement("canvas");
       let {
         cropWidth,

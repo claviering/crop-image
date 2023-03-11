@@ -1,5 +1,5 @@
 import "./style.css";
-import { CropImage, IData, CropRectangle } from "./cropImage";
+import { CropImage, IData, CropRectangle } from "../lib";
 
 interface ICropPositionCash {
   [key: number]: CropRectangle;
@@ -68,7 +68,7 @@ inputDom.onchange = (e: any) => {
       }
       setZoomPrototype(imageDom, data);
       setCacheData(String(crop.ratio), data);
-      crop.ratio = 16 / 9;
+      crop.ratio = 2.35;
       crop.initImageSize();
       setZoomPrototype(image235Dom, crop.getIData());
       setCacheData(String(crop.ratio), crop.getIData());

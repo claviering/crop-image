@@ -13,11 +13,11 @@
 9. set mouse when cursor is in the renderBorderCirclor
 10. reszie the rectangle
 
-![GIF](./public/ScreenRecording.gif)
+![GIF](./docs/ScreenRecording.gif)
 
 ## screenshot
 
-![screenshot](./public/screenshot.png)
+![screenshot](./docs/screenshot.png)
 
 ## Try It Online
 
