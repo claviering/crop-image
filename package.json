@@ -1,6 +1,6 @@
 {
   "name": "@nfplus/image-crop",
-  "description": "图片裁剪",
+  "description": "image crop",
   "version": "0.0.1",
   "author": "weiye",
   "type": "module",
@@ -12,7 +12,7 @@
   ],
   "main": "./dist/index.umd.cjs",
   "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/types/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.js",

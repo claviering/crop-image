@@ -12,13 +12,13 @@
     "sourceMap": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "noEmit": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noImplicitReturns": true
+    "noImplicitReturns": true,
+    "outDir": "dist",
+    "declaration": true,
   },
   "include": [
-    "src",
     "lib/index.ts",
     "lib/cursorType.ts",
     "lib/sizeControlPoint.ts"
